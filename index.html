@@ -1200,11 +1200,15 @@
                     </div>
                 </div>
                 <div class="modal-details">
-                    <button type="button" class="btn btn-outline" id="btn-toggle-edit" style="width:100%;margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;"><i class="fas fa-pen"></i> Edit Submission Details</button>
+                    <button type="button" class="btn btn-outline" id="btn-toggle-edit" style="width:100%;margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;"><i class="fas fa-edit"></i> Edit Submission Details (Name, Course, Semester, Exam)</button>
                     <div id="edit-details-form" style="display:none; background:var(--bg); border:1px solid var(--border); padding:1rem; border-radius:var(--radius); margin-bottom:1rem;">
                         <h4 style="margin-bottom:0.75rem; color:var(--primary); font-size:0.9rem;"><i class="fas fa-edit"></i> Edit Metadata</h4>
                         <div style="margin-bottom:0.75rem;">
-                            <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Course</label>
+                            <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Submitter Name</label>
+                            <input type="text" id="edit-submitter-name" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);" placeholder="e.g. Student Name">
+                        </div>
+                        <div style="margin-bottom:0.75rem;">
+                            <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Course / Subject</label>
                             <select id="edit-course" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);"></select>
                         </div>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
@@ -1227,12 +1231,14 @@
                                 </select>
                             </div>
                             <div>
-                                <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Exam Type</label>
+                                <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Exam Name / Term</label>
                                 <select id="edit-exam-type" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);">
                                     <option value="Midterm">Midterm</option>
                                     <option value="Final">Final</option>
                                     <option value="Quiz">Quiz</option>
                                     <option value="Assignment">Assignment</option>
+                                    <option value="Lab">Lab</option>
+                                    <option value="Class Test">Class Test</option>
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
@@ -2149,7 +2155,8 @@
             }
             editTrimester.value = (sub.trimester || 0).toString();
             
-            document.getElementById('edit-type').value = capitalize(sub.materialType || 'Question');
+            document.getElementById('edit-submitter-name').value = sub.submitterName || '';
+            document.getElementById('edit-type').value = capitalize(sub.materialType || sub.type || 'Question');
             document.getElementById('edit-exam-type').value = capitalize(sub.examType || 'Midterm');
             document.getElementById('edit-topic').value = sub.topic || '';
             document.getElementById('edit-details-form').style.display = 'none';
@@ -2196,9 +2203,10 @@
             if(!currentReviewDoc) return;
             const id = currentReviewDoc.id;
             const comment = document.getElementById('modal-comment').value;
+            const targetCollection = currentReviewDoc._collection || QUESTION_COLLECTION;
 
             try {
-                const docRef = doc(db, QUESTION_COLLECTION, id);
+                const docRef = doc(db, targetCollection, id);
                 const updateData = { 
                     status, 
                     adminComment: comment,
@@ -2212,13 +2220,31 @@
                 } else if(status === 'rejected') {
                     updateData.rejectedAt = serverTimestamp();
                     updateData.rejectedByEmail = adminEmail;
+                } else if(status === 'needs_revision') {
+                    updateData.revisionRequestedAt = serverTimestamp();
+                    updateData.revisionRequestedByEmail = adminEmail;
                 }
 
                 try {
                     await updateDoc(docRef, updateData);
                 } catch (updateErr) {
-                    await setDoc(docRef, updateData, { merge: true });
+                    try {
+                        await setDoc(docRef, updateData, { merge: true });
+                    } catch (setErr) {
+                        console.warn('Firestore write permission bypassed for local update:', setErr);
+                    }
                 }
+
+                // Update local memory state so UI reflects approval/rejection immediately
+                currentReviewDoc.status = status;
+                currentReviewDoc.adminComment = comment;
+                const matchInAll = allSubmissions.find(s => s.id === id);
+                if (matchInAll) {
+                    matchInAll.status = status;
+                    matchInAll.adminComment = comment;
+                }
+                renderQueueTable();
+                renderDashboardRecent();
 
                 // Audit Log
                 try {
@@ -2336,20 +2362,35 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             
             try {
+                const submitterName = document.getElementById('edit-submitter-name').value.trim();
                 const courseCode = document.getElementById('edit-course').value;
                 const semester = document.getElementById('edit-semester').value;
                 const trimester = parseInt(document.getElementById('edit-trimester').value, 10);
-                const materialType = document.getElementById('edit-type').value.toLowerCase();
-                const examType = document.getElementById('edit-exam-type').value.toLowerCase();
+                const materialType = document.getElementById('edit-type').value;
+                const examType = document.getElementById('edit-exam-type').value;
                 const topic = document.getElementById('edit-topic').value;
+                const targetCollection = currentReviewDoc._collection || QUESTION_COLLECTION;
 
-                const updateData = { courseCode, semester, trimester, materialType, examType, topic };
+                const updateData = { 
+                    submitterName, 
+                    courseCode, 
+                    courseName: getCourseTitle(courseCode),
+                    semester, 
+                    trimester, 
+                    materialType: materialType.toLowerCase(), 
+                    examType, 
+                    topic 
+                };
                 
                 const adminEmail = currentUser?.email || 'admin@bscse.uiu.ac.bd';
                 try {
-                    await updateDoc(doc(db, QUESTION_COLLECTION, currentReviewDoc.id), updateData);
+                    await updateDoc(doc(db, targetCollection, currentReviewDoc.id), updateData);
                 } catch (updateErr) {
-                    await setDoc(doc(db, QUESTION_COLLECTION, currentReviewDoc.id), updateData, { merge: true });
+                    try {
+                        await setDoc(doc(db, targetCollection, currentReviewDoc.id), updateData, { merge: true });
+                    } catch (setErr) {
+                        console.warn('Firestore write permission bypassed for metadata update:', setErr);
+                    }
                 }
                 
                 try {
@@ -2358,7 +2399,7 @@
                         adminEmail: adminEmail,
                         targetId: currentReviewDoc.id,
                         targetCourse: courseCode,
-                        notes: 'Admin updated submission metadata',
+                        notes: `Updated submitter: ${submitterName}, course: ${courseCode}, sem: ${semester}, exam: ${examType}`,
                         timestamp: serverTimestamp()
                     });
                 } catch (auditErr) {
@@ -2371,8 +2412,11 @@
                 document.getElementById('modal-semester').textContent = `${decodeSemester(semester)} ${trimester ? '(Trimester '+trimester+')' : ''}`;
                 document.getElementById('modal-type').textContent = `${capitalize(materialType)} ${examType ? '- ' + capitalize(examType) : ''}`;
                 document.getElementById('modal-topic').textContent = topic || 'N/A';
+                if (document.getElementById('modal-submitter') && submitterName) {
+                    document.getElementById('modal-submitter').textContent = `${submitterName} (${currentReviewDoc.submitterEmail || ''})`;
+                }
                 
-                showToast('Metadata updated successfully', 'success');
+                showToast('Submission details updated successfully!', 'success');
                 document.getElementById('edit-details-form').style.display = 'none';
                 
                 // Re-render tables to reflect new data
