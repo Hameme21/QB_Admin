@@ -774,6 +774,73 @@
             font-size: 0.9rem;
         }
 
+        /* Mobile Bottom Nav Bar */
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 1.25rem;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            width: 220px;
+            height: 56px;
+            background: rgba(17, 24, 39, 0.9);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            display: none;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 0.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+        }
+
+        .bottom-nav-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            font-size: 1.05rem;
+        }
+
+        .bottom-nav-item.active {
+            color: #ffffff;
+            background: var(--primary);
+            box-shadow: 0 4px 15px rgba(243, 112, 33, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                display: flex;
+            }
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                padding-bottom: 6rem;
+            }
+            .portal-loader {
+                padding: 1.5rem;
+            }
+            .portal-loader-logo {
+                font-size: 1.6rem;
+            }
+            .portal-loader-logo i {
+                font-size: 2rem;
+            }
+            .portal-loader-spinner {
+                width: 160px;
+            }
+        }
+
         /* Filters */
         .filters-bar {
             display: flex;
@@ -1670,7 +1737,9 @@
 
         // Navigation
         const setupNavigation = () => {
-            const navItems = document.querySelectorAll('.nav-item');
+            const navItems = document.querySelectorAll('.nav-item, .bottom-nav-item');
+            const sidebarItems = document.querySelectorAll('.sidebar .nav-item');
+            const bottomItems = document.querySelectorAll('.mobile-bottom-nav .bottom-nav-item');
             const pages = document.querySelectorAll('.page-content');
             
             navItems.forEach(item => {
@@ -1678,19 +1747,31 @@
                     const targetId = item.getAttribute('data-target');
                     if(!targetId) return;
                     
-                    navItems.forEach(n => n.classList.remove('active'));
-                    item.classList.add('active');
+                    sidebarItems.forEach(n => n.classList.remove('active'));
+                    bottomItems.forEach(b => b.classList.remove('active'));
+                    
+                    document.querySelectorAll(`[data-target="${targetId}"]`).forEach(el => el.classList.add('active'));
                     
                     pages.forEach(p => p.classList.remove('active'));
-                    document.getElementById(`page-${targetId}`).classList.add('active');
+                    const targetPage = document.getElementById(`page-${targetId}`);
+                    if (targetPage) targetPage.classList.add('active');
                     
-                    document.getElementById('page-title').textContent = item.textContent.trim();
+                    const titleMap = {
+                        'dashboard': 'Dashboard',
+                        'queue': 'Review Queue',
+                        'audit': 'Audit Logs'
+                    };
+                    document.getElementById('page-title').textContent = titleMap[targetId] || 'Admin Portal';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
 
-            document.getElementById('view-all-btn').addEventListener('click', () => {
-                document.querySelector('.nav-item[data-target="queue"]').click();
-            });
+            const viewAllBtn = document.getElementById('view-all-btn');
+            if (viewAllBtn) {
+                viewAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-target="queue"]')[0]?.click();
+                });
+            }
         };
 
         // Theme
@@ -2333,5 +2414,20 @@
         });
 
     </script>
+    <!-- Mobile Bottom Navigation for Admin -->
+    <nav class="mobile-bottom-nav" id="adminMobileBottomNav">
+        <a href="#dashboard" class="bottom-nav-item active" data-target="dashboard" title="Dashboard">
+            <i class="fas fa-chart-line"></i>
+        </a>
+        <a href="#queue" class="bottom-nav-item" data-target="queue" title="Review Queue">
+            <i class="fas fa-list-check"></i>
+        </a>
+        <a href="#audit" class="bottom-nav-item" data-target="audit" title="Audit Logs">
+            <i class="fas fa-history"></i>
+        </a>
+        <a href="https://uiu-question-bank.vercel.app/" target="_blank" class="bottom-nav-item" title="Question Bank">
+            <i class="fas fa-external-link-alt"></i>
+        </a>
+    </nav>
 </body>
 </html>
