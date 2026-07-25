@@ -40,4 +40,4 @@ npx serve .
 
 ## License
 
-*(add a license here if you'd like this to be open source, e.g. MIT)*
+Licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
