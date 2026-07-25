@@ -1573,12 +1573,12 @@
 
         const getMainFileUrl = (sub) => {
             if (!sub) return '';
-            return sub.pdfUrl || sub.fileUrl || sub.notePdfUrl || (sub.materialAssets && sub.materialAssets.find(a => a.assetType !== 'solution')?.pdfUrl) || (sub.materialAssets && sub.materialAssets[0]?.pdfUrl) || '';
+            return sub.pdfUrl || sub.fileUrl || sub.notePdfUrl || sub.url || sub.downloadUrl || sub.cloudinaryUrl || (sub.materialAssets && sub.materialAssets.find(a => a.assetType !== 'solution')?.pdfUrl) || (sub.materialAssets && sub.materialAssets[0]?.pdfUrl) || (sub.materialAssets && sub.materialAssets[0]?.url) || '';
         };
 
         const getSolutionFileUrl = (sub) => {
             if (!sub) return '';
-            return sub.solutionPdfUrl || sub.solutionUrl || (sub.materialAssets && sub.materialAssets.find(a => a.assetType === 'solution')?.pdfUrl) || '';
+            return sub.solutionPdfUrl || sub.solutionUrl || sub.solutionFileUrl || (sub.materialAssets && sub.materialAssets.find(a => a.assetType === 'solution')?.pdfUrl) || (sub.materialAssets && sub.materialAssets.find(a => a.assetType === 'solution')?.url) || '';
         };
 
         function renderFilePreview(container, url, label = 'File') {
@@ -1963,11 +1963,11 @@
 
             recent.forEach(sub => {
                 const tr = document.createElement('tr');
-                const fileUrl = sub.pdfUrl || sub.fileUrl || sub.notePdfUrl || (sub.materialAssets && sub.materialAssets[0]?.pdfUrl) || '#';
+                const fileUrl = getMainFileUrl(sub) || '#';
                 tr.innerHTML = `
                     <td><strong>${sub.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(sub.courseCode)}</small></td>
-                    <td>${sub.topic || sub.examType}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
-                    <td>${capitalize(sub.materialType)}</td>
+                    <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
+                    <td>${capitalize(sub.materialType || sub.type || 'Question')}</td>
                     <td>${formatDate(sub)}</td>
                     <td>
                         <button type="button" onclick="forceDownloadFile('${fileUrl}', '${sub.courseCode || 'Submission'}_Question.pdf')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
@@ -1991,9 +1991,9 @@
                 let match = true;
                 const status = sub.status || 'pending';
                 if(filterStatus !== 'all' && status !== filterStatus) match = false;
-                if(filterType !== 'all' && sub.materialType !== filterType) match = false;
+                if(filterType !== 'all' && (sub.materialType === filterType || sub.type === filterType)) match = false;
                 if(filterSearch) {
-                    const searchStr = `${sub.courseCode} ${getCourseTitle(sub.courseCode)} ${sub.topic} ${sub.submitterEmail}`.toLowerCase();
+                    const searchStr = `${sub.courseCode} ${sub.courseName || ''} ${getCourseTitle(sub.courseCode)} ${sub.topic || ''} ${sub.submitterEmail || ''} ${sub.submitterName || ''}`.toLowerCase();
                     if(!searchStr.includes(filterSearch)) match = false;
                 }
                 return match;
@@ -2007,7 +2007,7 @@
             filtered.forEach(sub => {
                 const tr = document.createElement('tr');
                 const status = sub.status || 'pending';
-                const fileUrl = sub.pdfUrl || sub.fileUrl || sub.notePdfUrl || (sub.materialAssets && sub.materialAssets[0]?.pdfUrl) || '#';
+                const fileUrl = getMainFileUrl(sub) || '#';
                 tr.innerHTML = `
                     <td><strong>${sub.courseCode}</strong></td>
                     <td>${sub.trimester ? 'T' + sub.trimester : '-'} | ${decodeSemester(sub.semester)}</td>
