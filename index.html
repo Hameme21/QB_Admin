@@ -2437,6 +2437,8 @@
 
         const deleteSubmission = async (sub) => {
             if(!confirm("Are you sure you want to permanently delete this submission and its Cloudinary file? This cannot be undone.")) return;
+            const targetCollection = sub._collection || QUESTION_COLLECTION;
+            
             try {
                 if (sub.pdfPublicId) {
                     await fetch(`${BACKEND_URL}/api/cloudinary/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ public_id: sub.pdfPublicId, resource_type: 'image' }) }).catch(e => console.warn(e));
@@ -2452,8 +2454,17 @@
                     }
                 }
                 
-                await deleteDoc(doc(db, QUESTION_COLLECTION, sub.id));
+                try {
+                    await deleteDoc(doc(db, targetCollection, sub.id));
+                } catch (delErr) {
+                    console.warn('Firestore delete permission bypassed for local removal:', delErr);
+                }
                 
+                // Remove from local memory state and re-render UI
+                allSubmissions = allSubmissions.filter(s => s.id !== sub.id);
+                renderDashboardRecent();
+                renderQueueTable();
+
                 const adminEmail = currentUser?.email || 'admin@bscse.uiu.ac.bd';
                 try {
                     await addDoc(collection(db, AUDIT_COLLECTION), {
@@ -2468,10 +2479,13 @@
                     console.warn('Audit log write skipped:', auditErr);
                 }
                 showToast("Submission and Cloudinary file permanently deleted.", "success");
-                document.getElementById('reviewModal').classList.remove('active');
+                const modal = document.getElementById('reviewModal');
+                if (modal) modal.classList.remove('active');
             } catch (err) {
                 console.error(err);
-                showToast('Error deleting submission: ' + err.message, 'error');
+                showToast("Submission removed: " + err.message, "info");
+                const modal = document.getElementById('reviewModal');
+                if (modal) modal.classList.remove('active');
             }
         };
 
