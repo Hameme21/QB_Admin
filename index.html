@@ -2040,12 +2040,82 @@
 
         function isDocApproved(doc) {
             if (!doc) return false;
-            const s = String(doc.status || '').toLowerCase();
+            const s = String(doc.status || '').trim().toLowerCase();
             if (s === 'approved') return true;
-            if (doc.isApproved === true || doc.approved === true) return true;
-            if ((doc._collection === 'questionPapers' || doc._collection === 'questions' || doc._collection === 'materials') && s !== 'pending' && s !== 'rejected' && s !== 'needs_revision') return true;
+            if (doc.isApproved === true || doc.approved === true || doc.is_approved === true) return true;
+            if (s !== 'pending' && s !== 'under_review' && s !== 'rejected' && s !== 'needs_revision' && s !== 'revision') {
+                if (doc._collection === 'questionPapers' || doc._collection === 'questions' || doc._collection === 'materials' || doc.pdfUrl || doc.fileUrl || doc.notePdfUrl || doc.url) {
+                    return true;
+                }
+            }
             return false;
         }
+
+        const renderApprovedTable = () => {
+            const tbody = document.querySelector('#approved-materials-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const filterType = (document.getElementById('filter-approved-type')?.value || 'all').trim().toLowerCase();
+            const filterSearch = (document.getElementById('filter-approved-search')?.value || '').trim().toLowerCase();
+
+            let approvedList = allSubmissions.filter(sub => {
+                if (!isDocApproved(sub)) return false;
+                
+                if (filterType !== 'all') {
+                    const rawType = String(sub.materialType || sub.type || sub.materialGroup || 'question').trim().toLowerCase();
+                    if (filterType === 'question') {
+                        if (!rawType.includes('question') && !rawType.includes('paper') && rawType !== 'lab' && rawType !== '') return false;
+                    } else if (filterType === 'note') {
+                        if (!rawType.includes('note')) return false;
+                    } else if (filterType === 'solution') {
+                        if (!rawType.includes('solution') && !rawType.includes('sol')) return false;
+                    } else {
+                        if (!rawType.includes(filterType)) return false;
+                    }
+                }
+
+                if (filterSearch) {
+                    const cCode = sub.courseCode || sub.course || sub.code || '';
+                    const searchStr = `${cCode} ${sub.courseName || ''} ${getCourseTitle(cCode)} ${sub.topic || ''} ${sub.submitterEmail || ''} ${sub.submitterName || ''} ${sub.approvedByEmail || ''}`.toLowerCase();
+                    if (!searchStr.includes(filterSearch)) return false;
+                }
+                return true;
+            });
+
+            if (approvedList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding: 2rem;">No approved materials found matching criteria</td></tr>';
+                return;
+            }
+
+            approvedList.forEach(sub => {
+                const tr = document.createElement('tr');
+                const fileUrl = getMainFileUrl(sub) || '#';
+                const mainName = formatPdfDownloadName(sub, false);
+                const cCode = sub.courseCode || sub.course || sub.code || 'N/A';
+                const trimText = sub.trimester ? 'T' + sub.trimester : (sub.semester ? decodeSemester(sub.semester) : '-');
+                const displayType = sub.materialType || sub.type || 'Question';
+                const submitterText = sub.submitterEmail || sub.submitterName || sub.approvedByEmail || 'Admin';
+
+                tr.innerHTML = `
+                    <td><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
+                    <td>${trimText}</td>
+                    <td>${sub.topic || sub.examType || '-'}</td>
+                    <td><span class="badge badge-approved">${capitalize(displayType)}</span></td>
+                    <td>${submitterText}</td>
+                    <td><span class="badge badge-approved">Approved</span></td>
+                    <td>
+                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                        <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Re-Review / Edit Status">
+                            <i class="fas fa-edit"></i> Re-Review
+                        </button>
+                        <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Approved Material"><i class="fas fa-trash-alt"></i> Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            attachReviewListeners();
+        };
 
         const fetchSubmissions = () => {
             const collectionsToListen = ['question_bank_submissions', 'questionPapers', 'questions', 'materials'];
@@ -2279,58 +2349,6 @@
                             Review
                         </button>
                         <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Submission"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            attachReviewListeners();
-        };
-
-        const renderApprovedTable = () => {
-            const tbody = document.querySelector('#approved-materials-table tbody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            const filterType = (document.getElementById('filter-approved-type')?.value || 'all').toLowerCase();
-            const filterSearch = (document.getElementById('filter-approved-search')?.value || '').toLowerCase();
-
-            let approvedList = allSubmissions.filter(sub => {
-                if (!isDocApproved(sub)) return false;
-                
-                if (filterType !== 'all') {
-                    const typeLower = String(sub.materialType || sub.type || '').toLowerCase();
-                    if (!typeLower.includes(filterType)) return false;
-                }
-
-                if (filterSearch) {
-                    const searchStr = `${sub.courseCode} ${sub.courseName || ''} ${getCourseTitle(sub.courseCode)} ${sub.topic || ''} ${sub.submitterEmail || ''} ${sub.submitterName || ''}`.toLowerCase();
-                    if (!searchStr.includes(filterSearch)) return false;
-                }
-                return true;
-            });
-
-            if (approvedList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding: 2rem;">No approved materials found matching criteria</td></tr>';
-                return;
-            }
-
-            approvedList.forEach(sub => {
-                const tr = document.createElement('tr');
-                const fileUrl = getMainFileUrl(sub) || '#';
-                const mainName = formatPdfDownloadName(sub, false);
-                tr.innerHTML = `
-                    <td><strong>${sub.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(sub.courseCode)}</small></td>
-                    <td>${sub.trimester ? 'T' + sub.trimester : '-'} | ${decodeSemester(sub.semester)}</td>
-                    <td>${sub.topic || '-'}</td>
-                    <td><span class="badge badge-approved">${capitalize(sub.materialType || sub.type || 'Question')}</span></td>
-                    <td>${sub.submitterEmail || sub.approvedByEmail || 'Admin'}</td>
-                    <td><span class="badge badge-approved">Approved</span></td>
-                    <td>
-                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
-                        <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Re-Review / Edit Status">
-                            <i class="fas fa-edit"></i> Re-Review
-                        </button>
-                        <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Approved Material"><i class="fas fa-trash-alt"></i> Delete</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
