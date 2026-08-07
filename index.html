@@ -1755,13 +1755,14 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                if (user.email && user.email.toLowerCase().includes('uiu.ac.bd')) {
+                const userEmail = (user.email || '').toLowerCase();
+                if (userEmail.includes('uiu.ac.bd') || userEmail === 'hamimasir5@gmail.com') {
                     currentUser = user;
                     
                     // Create or update admin record in Firestore
                     try {
                         await setDoc(doc(db, 'admins', user.uid), {
-                            email: user.email.toLowerCase(),
+                            email: userEmail,
                             role: 'admin',
                             lastLogin: serverTimestamp()
                         }, { merge: true });
@@ -1771,12 +1772,12 @@
 
                     document.getElementById('auth-view').style.display = 'none';
                     document.getElementById('app-layout').style.display = 'flex';
-                    document.getElementById('sidebar-name').textContent = user.email.split('@')[0];
-                    document.getElementById('sidebar-avatar').textContent = user.email.charAt(0).toUpperCase();
+                    document.getElementById('sidebar-name').textContent = userEmail.split('@')[0];
+                    document.getElementById('sidebar-avatar').textContent = userEmail.charAt(0).toUpperCase();
                     initApp();
                     hidePortalLoader();
                 } else {
-                    document.getElementById('auth-error').textContent = 'Unauthorized. Use a valid @uiu.ac.bd admin email.';
+                    document.getElementById('auth-error').textContent = 'Unauthorized. Use hamimasir5@gmail.com or a valid @uiu.ac.bd admin email.';
                     document.getElementById('auth-error').style.display = 'block';
                     signOut(auth);
                     hidePortalLoader();
@@ -1796,8 +1797,9 @@
             const btn = document.getElementById('login-btn');
             document.getElementById('auth-error').style.display = 'none';
 
-            if (!email.toLowerCase().includes('uiu.ac.bd')) {
-                document.getElementById('auth-error').textContent = 'Email must end with @uiu.ac.bd or @bscse.uiu.ac.bd';
+            const emailLower = email.toLowerCase();
+            if (!emailLower.includes('uiu.ac.bd') && emailLower !== 'hamimasir5@gmail.com') {
+                document.getElementById('auth-error').textContent = 'Email must be hamimasir5@gmail.com or end with @uiu.ac.bd';
                 document.getElementById('auth-error').style.display = 'block';
                 return;
             }
@@ -2306,7 +2308,7 @@
                     updatedAt: serverTimestamp()
                 };
 
-                const adminEmail = currentUser?.email || 'admin@bscse.uiu.ac.bd';
+                const adminEmail = currentUser?.email || 'hamimasir5@gmail.com';
                 if(status === 'approved') {
                     updateData.approvedAt = serverTimestamp();
                     updateData.approvedByEmail = adminEmail;
@@ -2475,7 +2477,7 @@
                     topic 
                 };
                 
-                const adminEmail = currentUser?.email || 'admin@bscse.uiu.ac.bd';
+                const adminEmail = currentUser?.email || 'hamimasir5@gmail.com';
                 try {
                     await updateDoc(doc(db, targetCollection, currentReviewDoc.id), updateData);
                 } catch (updateErr) {
@@ -2558,7 +2560,7 @@
                 renderDashboardRecent();
                 renderQueueTable();
 
-                const adminEmail = currentUser?.email || 'admin@bscse.uiu.ac.bd';
+                const adminEmail = currentUser?.email || 'hamimasir5@gmail.com';
                 try {
                     await addDoc(collection(db, AUDIT_COLLECTION), {
                         action: 'DELETE',
@@ -2905,7 +2907,7 @@
                         approvedAt: serverTimestamp(),
                         approvedBy: 'Admin (Direct)',
                         submitterName: 'Admin Direct',
-                        submitterEmail: 'admin@uiu.ac.bd',
+                        submitterEmail: currentUser?.email || 'hamimasir5@gmail.com',
                         courseSearch: `${courseCode} ${course.title} ${topic}`.toLowerCase(),
                         materialGroup: materialType === 'Notes' ? 'notes' : 'questions',
                         submittedAt: serverTimestamp(),
@@ -2915,7 +2917,7 @@
                     try {
                         await addDoc(collection(db, AUDIT_COLLECTION), {
                             action: 'DIRECT_UPLOAD',
-                            adminEmail: currentUser?.email || 'admin@uiu.ac.bd',
+                            adminEmail: currentUser?.email || 'hamimasir5@gmail.com',
                             targetId: newDocRef.id,
                             targetCourse: courseCode,
                             notes: `Direct uploaded & approved material: ${courseCode} (${materialType} - ${examType})`,
