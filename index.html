@@ -2589,6 +2589,91 @@
         // ==========================================
         // ADMIN DIRECT UPLOAD & DROPZONES
         // ==========================================
+        async function safeFetchJson(url, options) {
+            const targetUrl = (url.startsWith('/') && !url.startsWith('//')) ? `${BACKEND_URL}${url}` : url;
+            let response;
+            try {
+                response = await fetch(targetUrl, options);
+            } catch (e) {
+                throw new Error(`Network error calling ${targetUrl}. Please check backend connectivity at ${BACKEND_URL}.`);
+            }
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch {
+                if (!response.ok) {
+                    throw new Error(`Server returned HTTP ${response.status} (${response.statusText || 'Not Found'}).`);
+                }
+                throw new Error(`Unexpected server response: ${text.slice(0, 100)}`);
+            }
+            if (!response.ok) {
+                throw new Error(data.error || data.message || `Request failed with HTTP ${response.status}`);
+            }
+            return data;
+        }
+
+        async function requestUploadSignature(assetType, courseCode, topic) {
+            return await safeFetchJson('/api/cloudinary/sign-upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    assetType,
+                    courseCode,
+                    assetLabel: `${courseCode} ${assetType}${topic ? ' - ' + topic : ''}`,
+                    resourceType: 'auto'
+                })
+            });
+        }
+
+        async function uploadToCloudinary(assetType, file, courseCode, topic, onProgress) {
+            const signature = await requestUploadSignature(assetType, courseCode, topic);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', signature.apiKey);
+            formData.append('signature', signature.signature);
+            Object.entries(signature.uploadParams || {}).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+            
+            const data = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', signature.uploadUrl, true);
+                if (xhr.upload && typeof onProgress === 'function') {
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const p = Math.round((e.loaded / e.total) * 100);
+                            onProgress(p);
+                        }
+                    };
+                }
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try { resolve(JSON.parse(xhr.responseText)); } catch (err) { reject(err); }
+                    } else {
+                        try {
+                            const errData = JSON.parse(xhr.responseText);
+                            reject(new Error(errData.error?.message || `Upload failed with HTTP ${xhr.status}`));
+                        } catch {
+                            reject(new Error(`Upload failed with HTTP ${xhr.status}`));
+                        }
+                    }
+                };
+                xhr.onerror = () => reject(new Error('Network error during file upload to Cloudinary'));
+                xhr.send(formData);
+            });
+
+            return {
+                assetType,
+                topic,
+                pdfUrl: data.secure_url,
+                cloudinaryPublicId: data.public_id,
+                cloudinaryResourceType: data.resource_type || 'raw',
+                cloudinaryAssetId: data.asset_id || '',
+                bytes: data.bytes || file.size,
+                originalFilename: data.original_filename || file.name
+            };
+        }
         const openAdminUploadBtn = document.getElementById('open-admin-upload-btn');
         const sidebarUploadBtn = document.getElementById('sidebar-upload-btn');
         const adminUploadModal = document.getElementById('adminUploadModal');
