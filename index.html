@@ -1508,15 +1508,7 @@
 
         const decodeSemester = (semCode) => {
             if(!semCode || String(semCode).length !== 3) return 'Unknown';
-            const str = String(semCode);
-            const yearStr = str.substring(0, 2);
-            const termStr = str.substring(2);
-            const year = '20' + yearStr;
-            let term = '';
-            if(termStr === '1') term = 'Spring';
-            else if(termStr === '2') term = 'Summer';
-            else if(termStr === '3') term = 'Fall';
-            return `${term} ${year}`;
+            return String(semCode);
         };
 
         const generateAdminSemesters = () => {
