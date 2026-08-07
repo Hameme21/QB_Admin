@@ -3131,23 +3131,25 @@
 
                     if (!mainFile) throw new Error('Please attach a main file.');
 
-                    // Strictly forbid duplicate question papers for same course + exam + trimester
-                    if (materialType === 'Question' || materialType === 'Lab') {
+                    // Strictly forbid duplicate question papers for same course + exam + semester (Midterm / Final only)
+                    if ((materialType === 'Question' || materialType === 'Lab') && (examType.toLowerCase() === 'midterm' || examType.toLowerCase() === 'final')) {
                         const cleanCourse = courseCode.replace(/\s+/g, '').toUpperCase();
                         const isDuplicate = allSubmissions.some(p => {
                             const pType = (p.type || p.materialType || 'Question').toLowerCase();
                             if (pType !== materialType.toLowerCase() && pType !== 'question') return false;
+                            
                             const pCourse = (p.courseCode || '').replace(/\s+/g, '').toUpperCase();
                             const pExam = (p.examType || '').toLowerCase();
-                            const pSem = String(p.trimester || p.semester || '');
+                            const pSemester = String(p.semester || '');
                             
                             return pCourse === cleanCourse && 
                                    pExam === examType.toLowerCase() && 
-                                   (pSem === String(trimester) || pSem === String(semester));
+                                   pSemester === String(semester);
                         });
 
                         if (isDuplicate) {
-                            throw new Error(`A ${examType} question paper for ${courseCode} (${trimester || semester}) ALREADY EXISTS in the Question Bank! Duplicate question papers are strictly forbidden.`);
+                            const semLabel = document.getElementById('adminUpSemester').options[document.getElementById('adminUpSemester').selectedIndex]?.text || semester;
+                            throw new Error(`A ${examType} question paper for ${courseCode} (${semLabel}) ALREADY EXISTS in the Question Bank! Duplicate question papers are strictly forbidden.`);
                         }
                     }
 
