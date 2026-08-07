@@ -1739,6 +1739,28 @@
 
         const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
+        const formatPdfDownloadName = (paper, isSolution = false) => {
+            if (!paper) return 'download.pdf';
+            const courseCodeRaw = (paper.courseCode || 'CSE1111').trim();
+            const deptMatch = courseCodeRaw.match(/^([a-zA-Z]+)/);
+            const dept = deptMatch ? deptMatch[1].toUpperCase() : 'CSE';
+            const cleanCourseCode = courseCodeRaw.replace(/\s+/g, '').toUpperCase();
+            
+            let examName = isSolution ? 'Solution' : (paper.examType || paper.type || paper.topic || 'Exam');
+            if (!isSolution && paper.type === 'Question' && paper.examType) {
+                examName = paper.examType;
+            }
+            if (isSolution && paper.examType) {
+                examName = `${paper.examType}_Solution`;
+            }
+            examName = String(examName).replace(/[^a-zA-Z0-9]/g, '');
+            if (!examName) examName = 'Exam';
+            
+            const trimesterCode = paper.semester || (paper.trimester ? `251` : '251');
+            
+            return `${dept}_${cleanCourseCode}_${examName}_${trimesterCode}.pdf`;
+        };
+
         const getMainFileUrl = (sub) => {
             if (!sub) return '';
             return sub.pdfUrl || sub.fileUrl || sub.notePdfUrl || sub.url || sub.downloadUrl || sub.cloudinaryUrl || (sub.materialAssets && sub.materialAssets.find(a => a.assetType !== 'solution')?.pdfUrl) || (sub.materialAssets && sub.materialAssets[0]?.pdfUrl) || (sub.materialAssets && sub.materialAssets[0]?.url) || '';
