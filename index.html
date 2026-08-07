@@ -1092,10 +1092,12 @@
                     </div>
                 </div>
 
-                <div class="card">
+                <div class="card" style="margin-bottom:1.5rem;">
                     <div class="card-header">
-                        <h3 class="card-title">Recent Pending Submissions</h3>
-                        <a href="#queue" class="btn btn-outline" style="padding: 0.4rem 1rem; font-size: 0.85rem;" id="view-all-btn">View All</a>
+                        <h3 class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+                            <i class="fas fa-clock" style="color:var(--warning);"></i> Recent Pending Submissions
+                        </h3>
+                        <a href="#queue" class="btn btn-outline" style="padding: 0.4rem 1rem; font-size: 0.85rem;" id="view-all-btn">View All Queue</a>
                     </div>
                     <div class="table-responsive">
                         <table id="dashboard-recent-table">
@@ -1114,14 +1116,41 @@
                         </table>
                     </div>
                 </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title" style="display:flex; align-items:center; gap:0.5rem;">
+                            <i class="fas fa-check-circle" style="color:var(--success);"></i> Total Approved & Published Materials
+                        </h3>
+                        <button type="button" class="btn btn-outline" style="padding: 0.4rem 1rem; font-size: 0.85rem;" onclick="document.querySelector('.nav-item[data-target=\'queue\']').click(); document.getElementById('filter-status').value='approved'; renderQueueTable();">
+                            View All Approved
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="dashboard-approved-table">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Topic / Term</th>
+                                    <th>Type</th>
+                                    <th>Date Approved</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <!-- Review Queue Page -->
             <section class="page-content" id="page-queue">
                 <div class="filters-bar">
                     <select class="filter-select" id="filter-status">
-                        <option value="all">All Statuses</option>
-                        <option value="pending" selected>Pending</option>
+                        <option value="all" selected>All Statuses</option>
+                        <option value="pending">Pending</option>
                         <option value="under_review">Under Review</option>
                         <option value="approved">Approved</option>
                         <option value="rejected">Rejected</option>
@@ -2065,37 +2094,68 @@
 
         // Rendering
         const renderDashboardRecent = () => {
-            const tbody = document.querySelector('#dashboard-recent-table tbody');
-            tbody.innerHTML = '';
+            const tbodyPending = document.querySelector('#dashboard-recent-table tbody');
+            const tbodyApproved = document.querySelector('#dashboard-approved-table tbody');
             
-            const recent = allSubmissions.filter(s => s.status === 'pending' || !s.status).slice(0, 5);
-            
-            if(recent.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending submissions</td></tr>';
-                return;
+            if (tbodyPending) {
+                tbodyPending.innerHTML = '';
+                const recentPending = allSubmissions.filter(s => (s.status || 'pending').toLowerCase() === 'pending' || (s.status || '').toLowerCase() === 'under_review').slice(0, 5);
+                
+                if (recentPending.length === 0) {
+                    tbodyPending.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:1rem;">No pending submissions</td></tr>';
+                } else {
+                    recentPending.forEach(sub => {
+                        const tr = document.createElement('tr');
+                        const fileUrl = getMainFileUrl(sub) || '#';
+                        const mainName = formatPdfDownloadName(sub, false);
+                        tr.innerHTML = `
+                            <td><strong>${sub.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(sub.courseCode)}</small></td>
+                            <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
+                            <td>${capitalize(sub.materialType || sub.type || 'Question')}</td>
+                            <td>${formatDate(sub)}</td>
+                            <td>
+                                <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                                <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Review</button>
+                            </td>
+                        `;
+                        tbodyPending.appendChild(tr);
+                    });
+                }
             }
 
-            recent.forEach(sub => {
-                const tr = document.createElement('tr');
-                const fileUrl = getMainFileUrl(sub) || '#';
-                const mainName = formatPdfDownloadName(sub, false);
-                tr.innerHTML = `
-                    <td><strong>${sub.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(sub.courseCode)}</small></td>
-                    <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
-                    <td>${capitalize(sub.materialType || sub.type || 'Question')}</td>
-                    <td>${formatDate(sub)}</td>
-                    <td>
-                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
-                        <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Review</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+            if (tbodyApproved) {
+                tbodyApproved.innerHTML = '';
+                const recentApproved = allSubmissions.filter(s => (s.status || '').toLowerCase() === 'approved' || s.isApproved === true).slice(0, 8);
+                
+                if (recentApproved.length === 0) {
+                    tbodyApproved.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:1rem;">No approved documents found yet</td></tr>';
+                } else {
+                    recentApproved.forEach(sub => {
+                        const tr = document.createElement('tr');
+                        const fileUrl = getMainFileUrl(sub) || '#';
+                        const mainName = formatPdfDownloadName(sub, false);
+                        tr.innerHTML = `
+                            <td><strong>${sub.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(sub.courseCode)}</small></td>
+                            <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
+                            <td><span class="badge badge-approved">${capitalize(sub.materialType || sub.type || 'Question')}</span></td>
+                            <td>${formatDate(sub)}</td>
+                            <td>
+                                <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                                <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;">Review</button>
+                                <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Approved Material"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        `;
+                        tbodyApproved.appendChild(tr);
+                    });
+                }
+            }
+
             attachReviewListeners();
         };
 
         const renderQueueTable = () => {
             const tbody = document.querySelector('#queue-table tbody');
+            if (!tbody) return;
             tbody.innerHTML = '';
             
             const filterStatus = document.getElementById('filter-status').value;
@@ -2104,17 +2164,29 @@
 
             let filtered = allSubmissions.filter(sub => {
                 let match = true;
-                const status = sub.status || 'pending';
-                if(filterStatus !== 'all' && status !== filterStatus) match = false;
-                if(filterType !== 'all' && (sub.materialType === filterType || sub.type === filterType)) match = false;
-                if(filterSearch) {
+                const status = String(sub.status || 'pending').toLowerCase();
+                const isApproved = status === 'approved' || sub.isApproved === true;
+                
+                if (filterStatus !== 'all') {
+                    if (filterStatus === 'approved' && !isApproved) match = false;
+                    else if (filterStatus === 'pending' && status !== 'pending' && status !== 'under_review') match = false;
+                    else if (filterStatus === 'rejected' && status !== 'rejected') match = false;
+                    else if (filterStatus === 'needs_revision' && status !== 'needs_revision') match = false;
+                }
+                
+                if (filterType !== 'all') {
+                    const typeLower = String(sub.materialType || sub.type || '').toLowerCase();
+                    if (!typeLower.includes(filterType.toLowerCase())) match = false;
+                }
+
+                if (filterSearch) {
                     const searchStr = `${sub.courseCode} ${sub.courseName || ''} ${getCourseTitle(sub.courseCode)} ${sub.topic || ''} ${sub.submitterEmail || ''} ${sub.submitterName || ''}`.toLowerCase();
-                    if(!searchStr.includes(filterSearch)) match = false;
+                    if (!searchStr.includes(filterSearch)) match = false;
                 }
                 return match;
             });
 
-            if(filtered.length === 0) {
+            if (filtered.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding: 2rem;">No submissions found matching criteria</td></tr>';
                 return;
             }
@@ -2128,7 +2200,7 @@
                     <td><strong>${sub.courseCode}</strong></td>
                     <td>${sub.trimester ? 'T' + sub.trimester : '-'} | ${decodeSemester(sub.semester)}</td>
                     <td>${sub.topic || '-'}</td>
-                    <td>${capitalize(sub.materialType)}</td>
+                    <td>${capitalize(sub.materialType || sub.type || 'Question')}</td>
                     <td>${sub.submitterEmail || 'Anonymous'}</td>
                     <td><span class="badge ${getBadgeClass(status)}">${capitalize(status.replace('_', ' '))}</span></td>
                     <td>
