@@ -2039,10 +2039,11 @@
         let isFirstSubmissionsLoad = true;
 
         function isDocApproved(doc) {
+            if (!doc) return false;
             const s = String(doc.status || '').toLowerCase();
             if (s === 'approved') return true;
             if (doc.isApproved === true || doc.approved === true) return true;
-            if (doc._collection === 'questionPapers' && s !== 'pending' && s !== 'rejected' && s !== 'needs_revision') return true;
+            if ((doc._collection === 'questionPapers' || doc._collection === 'questions' || doc._collection === 'materials') && s !== 'pending' && s !== 'rejected' && s !== 'needs_revision') return true;
             return false;
         }
 
@@ -2105,7 +2106,7 @@
                         const data = docSnap.data();
                         data.id = docSnap.id;
                         data._collection = colName;
-                        colMap.set(docSnap.id, data);
+                        colMap.set(`${colName}_${docSnap.id}`, data);
                     });
                     collectionMaps[colName] = colMap;
 
@@ -2173,8 +2174,9 @@
                         const tr = document.createElement('tr');
                         const fileUrl = getMainFileUrl(sub) || '#';
                         const mainName = formatPdfDownloadName(sub, false);
+                        const cCode = sub.courseCode || sub.course || 'N/A';
                         tr.innerHTML = `
-                            <td><strong>${sub.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(sub.courseCode)}</small></td>
+                            <td><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
                             <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
                             <td>${capitalize(sub.materialType || sub.type || 'Question')}</td>
                             <td>${formatDate(sub)}</td>
@@ -2190,7 +2192,7 @@
 
             if (tbodyApproved) {
                 tbodyApproved.innerHTML = '';
-                const recentApproved = allSubmissions.filter(s => (s.status || '').toLowerCase() === 'approved' || s.isApproved === true).slice(0, 8);
+                const recentApproved = allSubmissions.filter(s => isDocApproved(s)).slice(0, 8);
                 
                 if (recentApproved.length === 0) {
                     tbodyApproved.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:1rem;">No approved documents found yet</td></tr>';
@@ -2199,8 +2201,9 @@
                         const tr = document.createElement('tr');
                         const fileUrl = getMainFileUrl(sub) || '#';
                         const mainName = formatPdfDownloadName(sub, false);
+                        const cCode = sub.courseCode || sub.course || 'N/A';
                         tr.innerHTML = `
-                            <td><strong>${sub.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(sub.courseCode)}</small></td>
+                            <td><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
                             <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
                             <td><span class="badge badge-approved">${capitalize(sub.materialType || sub.type || 'Question')}</span></td>
                             <td>${formatDate(sub)}</td>
@@ -3085,6 +3088,26 @@
                     const solFile = document.getElementById('adminUpSolFile').files[0];
 
                     if (!mainFile) throw new Error('Please attach a main file.');
+
+                    // Strictly forbid duplicate question papers for same course + exam + trimester
+                    if (materialType === 'Question' || materialType === 'Lab') {
+                        const cleanCourse = courseCode.replace(/\s+/g, '').toUpperCase();
+                        const isDuplicate = allSubmissions.some(p => {
+                            const pType = (p.type || p.materialType || 'Question').toLowerCase();
+                            if (pType !== materialType.toLowerCase() && pType !== 'question') return false;
+                            const pCourse = (p.courseCode || '').replace(/\s+/g, '').toUpperCase();
+                            const pExam = (p.examType || '').toLowerCase();
+                            const pSem = String(p.trimester || p.semester || '');
+                            
+                            return pCourse === cleanCourse && 
+                                   pExam === examType.toLowerCase() && 
+                                   (pSem === String(trimester) || pSem === String(semester));
+                        });
+
+                        if (isDuplicate) {
+                            throw new Error(`A ${examType} question paper for ${courseCode} (${trimester || semester}) ALREADY EXISTS in the Question Bank! Duplicate question papers are strictly forbidden.`);
+                        }
+                    }
 
                     status.innerHTML = '<div style="font-size:0.8rem; color:var(--primary); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Uploading main file...</div>';
                     const mainAsset = await uploadToCloudinary(materialType === 'Notes' ? 'note' : 'question', mainFile, courseCode, topic);
