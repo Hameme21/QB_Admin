@@ -987,6 +987,9 @@
                 <a href="#audit" class="nav-item" data-target="audit">
                     <i class="fas fa-history"></i> Audit Logs
                 </a>
+                <button type="button" class="nav-item" id="sidebar-upload-btn" style="background:none; border:none; width:100%; text-align:left; cursor:pointer; font-family:inherit;">
+                    <i class="fas fa-cloud-upload-alt"></i> Direct Upload
+                </button>
                 <a href="https://uiu-question-bank.vercel.app/" target="_blank" class="nav-item" style="color: var(--secondary); margin-top: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.75rem;" title="Open Live Question Bank Web">
                     <i class="fas fa-external-link-alt"></i> Question Bank ↗
                 </a>
@@ -1012,6 +1015,9 @@
                 <h1 class="header-title" id="page-title">Dashboard</h1>
                 
                 <div class="header-actions">
+                    <button class="btn btn-primary" id="open-admin-upload-btn" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; font-size:0.8rem;" title="Upload Question Directly">
+                        <i class="fas fa-plus-circle"></i> Upload Question
+                    </button>
                     <a href="https://uiu-question-bank.vercel.app/" target="_blank" class="btn btn-outline" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; font-size:0.8rem; text-decoration:none; font-weight:600; border-color:var(--primary); color:var(--primary);" title="Open Live Question Bank Web">
                         <i class="fas fa-external-link-alt"></i> Question Bank ↗
                     </a>
@@ -1333,6 +1339,99 @@
                         <i class="fab fa-google"></i> Open in Gmail Compose
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Direct Upload Modal (Instant Publish) -->
+    <div class="modal-overlay" id="adminUploadModal">
+        <div class="modal-card" style="max-width: 620px; width:95%;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="display:flex; align-items:center; gap:0.5rem; color:var(--primary);">
+                    <i class="fas fa-cloud-upload-alt"></i> Direct Question Upload (Instant Publish)
+                </h3>
+                <button class="icon-btn" id="btn-close-admin-upload"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="padding:1.25rem 1.5rem; display:block;">
+                <form id="adminDirectUploadForm">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+                        <div class="form-group" style="position:relative;">
+                            <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Course Code / Title *</label>
+                            <input type="text" id="adminUpCourseSearch" class="input-control" placeholder="Search course code..." required autocomplete="off">
+                            <input type="hidden" id="adminUpCourse">
+                            <div id="adminCourseSearchResults" class="autocomplete-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; max-height:220px; z-index:1001; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-lg); overflow-y:auto;"></div>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Material Type *</label>
+                            <select id="adminUpType" class="input-control" required>
+                                <option value="Question">Question Paper</option>
+                                <option value="Lab">Lab Material</option>
+                                <option value="Notes">Lecture Notes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Semester Code *</label>
+                            <select id="adminUpSemester" class="input-control" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Trimester *</label>
+                            <select id="adminUpTrimester" class="input-control" required></select>
+                        </div>
+                        <div class="form-group" id="adminExamGroup">
+                            <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Exam Type</label>
+                            <select id="adminUpExamType" class="input-control">
+                                <option value="Midterm">Midterm</option>
+                                <option value="Final">Final</option>
+                                <option value="Quiz 1">Quiz 1</option>
+                                <option value="Quiz 2">Quiz 2</option>
+                                <option value="Assignment">Assignment</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0.75rem;">
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Topic / Title</label>
+                        <input type="text" id="adminUpTopic" class="input-control" placeholder="e.g. Chapter 3 Summary, Midterm Exam 2025">
+                    </div>
+
+                    <!-- File Dropzone 1: Main File -->
+                    <div class="form-group" style="margin-bottom:0.75rem;">
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Main File (PDF/Image) *</label>
+                        <div class="file-drop-area" id="adminMainDropzone" onclick="document.getElementById('adminUpMainFile').click()" style="padding:1rem;">
+                            <input type="file" id="adminUpMainFile" accept=".pdf,.png,.jpg,.jpeg" required style="display:none;">
+                            <div id="adminMainDropContent">
+                                <i class="fas fa-cloud-upload-alt" style="font-size:1.5rem; color:var(--primary); margin-bottom:0.25rem;"></i>
+                                <div style="font-weight:600; font-size:0.8rem;">Drag & drop main file here or <span style="color:var(--primary); text-decoration:underline;">browse</span></div>
+                                <div style="font-size:0.7rem; color:var(--text-muted);">PDF, PNG, JPG (Max 5MB)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Dropzone 2: Solution File -->
+                    <div class="form-group" id="adminSolGroup" style="margin-bottom:0.75rem;">
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Solution File (Optional)</label>
+                        <div class="file-drop-area" id="adminSolDropzone" onclick="document.getElementById('adminUpSolFile').click()" style="padding:1rem;">
+                            <input type="file" id="adminUpSolFile" accept=".pdf,.png,.jpg,.jpeg" style="display:none;">
+                            <div id="adminSolDropContent">
+                                <i class="fas fa-cloud-upload-alt" style="font-size:1.5rem; color:var(--primary); margin-bottom:0.25rem;"></i>
+                                <div style="font-weight:600; font-size:0.8rem;">Drag & drop solution file here or <span style="color:var(--primary); text-decoration:underline;">browse</span></div>
+                                <div style="font-size:0.7rem; color:var(--text-muted);">PDF, PNG, JPG (Max 5MB)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="adminUploadStatus"></div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
+                        <button type="button" class="btn btn-outline" id="btn-cancel-admin-upload">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-admin-upload" style="display:inline-flex; align-items:center; gap:0.4rem;">
+                            <i class="fas fa-check-circle"></i> Publish Directly
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1977,13 +2076,14 @@
             recent.forEach(sub => {
                 const tr = document.createElement('tr');
                 const fileUrl = getMainFileUrl(sub) || '#';
+                const mainName = formatPdfDownloadName(sub, false);
                 tr.innerHTML = `
                     <td><strong>${sub.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(sub.courseCode)}</small></td>
                     <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
                     <td>${capitalize(sub.materialType || sub.type || 'Question')}</td>
                     <td>${formatDate(sub)}</td>
                     <td>
-                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${sub.courseCode || 'Submission'}_Question.pdf')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
                         <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Review</button>
                     </td>
                 `;
@@ -2021,6 +2121,7 @@
                 const tr = document.createElement('tr');
                 const status = sub.status || 'pending';
                 const fileUrl = getMainFileUrl(sub) || '#';
+                const mainName = formatPdfDownloadName(sub, false);
                 tr.innerHTML = `
                     <td><strong>${sub.courseCode}</strong></td>
                     <td>${sub.trimester ? 'T' + sub.trimester : '-'} | ${decodeSemester(sub.semester)}</td>
@@ -2029,7 +2130,7 @@
                     <td>${sub.submitterEmail || 'Anonymous'}</td>
                     <td><span class="badge ${getBadgeClass(status)}">${capitalize(status.replace('_', ' '))}</span></td>
                     <td>
-                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${sub.courseCode || 'Submission'}_Question.pdf')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
                         ${status !== 'approved' ? `<button class="btn btn-outline btn-quick-approve" data-id="${sub.id}" style="color:var(--success); border-color:var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Approve"><i class="fas fa-check"></i></button>` : ''}
                         ${status !== 'rejected' ? `<button class="btn btn-outline btn-quick-reject" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Reject"><i class="fas fa-times"></i></button>` : ''}
                         <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;">
@@ -2107,7 +2208,7 @@
                 const fUrl = sub.pdfUrl || sub.fileUrl || sub.notePdfUrl || (sub.materialAssets && sub.materialAssets[0]?.pdfUrl) || '#';
                 dlBtn.onclick = (e) => {
                     e.preventDefault();
-                    forceDownloadFile(fUrl, `${sub.courseCode || 'Submission'}_Question.pdf`);
+                    forceDownloadFile(fUrl, formatPdfDownloadName(sub, false));
                 };
             }
 
@@ -2484,6 +2585,276 @@
         document.getElementById('btn-delete').addEventListener('click', () => {
             if (currentReviewDoc) deleteSubmission(currentReviewDoc);
         });
+
+        // ==========================================
+        // ADMIN DIRECT UPLOAD & DROPZONES
+        // ==========================================
+        const openAdminUploadBtn = document.getElementById('open-admin-upload-btn');
+        const sidebarUploadBtn = document.getElementById('sidebar-upload-btn');
+        const adminUploadModal = document.getElementById('adminUploadModal');
+        const closeAdminUploadBtn = document.getElementById('btn-close-admin-upload');
+        const cancelAdminUploadBtn = document.getElementById('btn-cancel-admin-upload');
+
+        const openAdminUploadModal = () => {
+            if (adminUploadModal) {
+                const semSel = document.getElementById('adminUpSemester');
+                if (semSel && semSel.options.length === 0) {
+                    ADMIN_SEMESTERS.forEach(sem => {
+                        const opt = document.createElement('option');
+                        opt.value = sem.code;
+                        opt.textContent = sem.label;
+                        semSel.appendChild(opt);
+                    });
+                }
+                const triSel = document.getElementById('adminUpTrimester');
+                if (triSel && triSel.options.length === 0) {
+                    const opt0 = document.createElement('option');
+                    opt0.value = '0'; opt0.textContent = 'Elective (0)';
+                    triSel.appendChild(opt0);
+                    for (let t = 1; t <= 12; t++) {
+                        const opt = document.createElement('option');
+                        opt.value = String(t);
+                        opt.textContent = `Trimester ${t}`;
+                        triSel.appendChild(opt);
+                    }
+                }
+                adminUploadModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        };
+
+        const closeAdminUploadModal = () => {
+            if (adminUploadModal) {
+                adminUploadModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        };
+
+        if (openAdminUploadBtn) openAdminUploadBtn.addEventListener('click', openAdminUploadModal);
+        if (sidebarUploadBtn) sidebarUploadBtn.addEventListener('click', openAdminUploadModal);
+        if (closeAdminUploadBtn) closeAdminUploadBtn.addEventListener('click', closeAdminUploadModal);
+        if (cancelAdminUploadBtn) cancelAdminUploadBtn.addEventListener('click', closeAdminUploadModal);
+
+        // Admin Course Autocomplete
+        const adminCourseSearch = document.getElementById('adminUpCourseSearch');
+        const adminCourseHidden = document.getElementById('adminUpCourse');
+        const adminCourseResults = document.getElementById('adminCourseSearchResults');
+
+        if (adminCourseSearch && adminCourseResults) {
+            const renderAdminCourseResults = (filter) => {
+                const q = filter.toLowerCase().trim();
+                const matches = q ? CURRICULUM.filter(c => {
+                    const str = `${c.code} ${c.title} ${(c.aliases||[]).join(' ')}`.toLowerCase();
+                    return str.includes(q);
+                }) : CURRICULUM.slice(0, 15);
+
+                if (matches.length === 0) {
+                    adminCourseResults.innerHTML = '<div style="padding:0.6rem; color:var(--text-muted); text-align:center;">No courses found</div>';
+                } else {
+                    adminCourseResults.innerHTML = matches.map(c => `
+                        <div class="admin-course-item" data-code="${c.code}" data-title="${c.title}" data-trim="${c.trimester}" style="padding:0.5rem 0.75rem; cursor:pointer; border-bottom:1px solid var(--border);">
+                            <div style="font-weight:600; color:var(--primary); font-size:0.85rem;">${c.code}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">${c.title}</div>
+                        </div>
+                    `).join('');
+                }
+                adminCourseResults.style.display = 'block';
+            };
+
+            adminCourseSearch.addEventListener('focus', () => renderAdminCourseResults(adminCourseSearch.value));
+            adminCourseSearch.addEventListener('input', () => renderAdminCourseResults(adminCourseSearch.value));
+
+            adminCourseResults.addEventListener('click', (e) => {
+                const item = e.target.closest('.admin-course-item');
+                if (!item) return;
+                const code = item.dataset.code;
+                const title = item.dataset.title;
+                const trim = item.dataset.trim;
+                adminCourseHidden.value = code;
+                adminCourseSearch.value = `${code} - ${title}`;
+                adminCourseResults.style.display = 'none';
+                const triSel = document.getElementById('adminUpTrimester');
+                if (triSel && trim) triSel.value = trim;
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#adminUpCourseSearch') && !e.target.closest('#adminCourseSearchResults')) {
+                    adminCourseResults.style.display = 'none';
+                }
+            });
+        }
+
+        function bindAdminDropzone(dropzoneId, inputId, contentId) {
+            const dropzone = document.getElementById(dropzoneId);
+            const input = document.getElementById(inputId);
+            const content = document.getElementById(contentId);
+            if (!dropzone || !input || !content) return;
+
+            const defaultHTML = content.innerHTML;
+
+            function updatePreview(file) {
+                if (!file) {
+                    content.innerHTML = defaultHTML;
+                    dropzone.classList.remove('has-file');
+                    return;
+                }
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                content.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; text-align:left;">
+                        <div style="display:flex; align-items:center; gap:0.6rem; overflow:hidden;">
+                            <i class="fas fa-file-pdf" style="font-size:1.5rem; color:var(--primary);"></i>
+                            <div style="overflow:hidden;">
+                                <div style="font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:var(--text-main); font-size:0.85rem;">${file.name}</div>
+                                <div style="font-size:0.7rem; color:var(--text-muted);">${sizeMB} MB • Ready</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.7rem; color:var(--danger); border-color:var(--danger);" onclick="event.stopPropagation(); resetAdminDropzone('${dropzoneId}','${inputId}','${contentId}');">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                dropzone.classList.add('has-file');
+            }
+
+            ['dragenter', 'dragover'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                });
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    input.files = dt.files;
+                    updatePreview(dt.files[0]);
+                }
+            });
+
+            input.addEventListener('change', () => {
+                if (input.files && input.files.length > 0) {
+                    updatePreview(input.files[0]);
+                }
+            });
+        }
+
+        function resetAdminDropzone(dropzoneId, inputId, contentId) {
+            const input = document.getElementById(inputId);
+            if (input) input.value = '';
+            const content = document.getElementById(contentId);
+            const dropzone = document.getElementById(dropzoneId);
+            if (dropzone) dropzone.classList.remove('has-file');
+            if (content) {
+                content.innerHTML = `
+                    <i class="fas fa-cloud-upload-alt" style="font-size:1.5rem; color:var(--primary); margin-bottom:0.25rem;"></i>
+                    <div style="font-weight:600; font-size:0.8rem;">Drag & drop file here or <span style="color:var(--primary); text-decoration:underline;">browse</span></div>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">PDF, PNG, JPG (Max 5MB)</div>
+                `;
+            }
+        }
+
+        bindAdminDropzone('adminMainDropzone', 'adminUpMainFile', 'adminMainDropContent');
+        bindAdminDropzone('adminSolDropzone', 'adminUpSolFile', 'adminSolDropContent');
+
+        const adminUploadForm = document.getElementById('adminDirectUploadForm');
+        if (adminUploadForm) {
+            adminUploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('btn-submit-admin-upload');
+                const status = document.getElementById('adminUploadStatus');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                status.innerHTML = '';
+
+                try {
+                    const courseCodeInput = document.getElementById('adminUpCourseSearch').value.split('-')[0].trim();
+                    const courseCode = document.getElementById('adminUpCourse').value || courseCodeInput;
+                    if (!courseCode) throw new Error('Please select a valid course code.');
+                    const course = CURRICULUM.find(c => c.code.toLowerCase().replace(/\s+/g, '') === courseCode.toLowerCase().replace(/\s+/g, '')) || { title: courseCode };
+
+                    const materialType = document.getElementById('adminUpType').value;
+                    const semester = document.getElementById('adminUpSemester').value;
+                    const trimester = parseInt(document.getElementById('adminUpTrimester').value, 10);
+                    const examType = materialType === 'Question' ? document.getElementById('adminUpExamType').value : (materialType === 'Lab' ? 'Lab' : 'Notes');
+                    const topic = document.getElementById('adminUpTopic').value.trim();
+
+                    const mainFile = document.getElementById('adminUpMainFile').files[0];
+                    const solFile = document.getElementById('adminUpSolFile').files[0];
+
+                    if (!mainFile) throw new Error('Please attach a main file.');
+
+                    status.innerHTML = '<div style="font-size:0.8rem; color:var(--primary); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Uploading main file...</div>';
+                    const mainAsset = await uploadToCloudinary(materialType === 'Notes' ? 'note' : 'question', mainFile, courseCode, topic);
+
+                    const materialAssets = [mainAsset];
+
+                    if (materialType === 'Question' && solFile) {
+                        status.innerHTML = '<div style="font-size:0.8rem; color:var(--primary); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Uploading solution file...</div>';
+                        const solAsset = await uploadToCloudinary('solution', solFile, courseCode, topic);
+                        materialAssets.push(solAsset);
+                    }
+
+                    status.innerHTML = '<div style="font-size:0.8rem; color:var(--success); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Publishing to Question Bank...</div>';
+
+                    // Add directly as approved to Firestore!
+                    const newDocRef = await addDoc(collection(db, QUESTION_COLLECTION), {
+                        courseCode: courseCode.replace(/\s+/g, ' ').toUpperCase(),
+                        courseName: course.title,
+                        semester,
+                        trimester,
+                        type: materialType,
+                        materialType,
+                        examType,
+                        topic: topic || `${examType} ${courseCode}`,
+                        materialAssets,
+                        pdfUrl: mainAsset.pdfUrl,
+                        solutionPdfUrl: solFile ? materialAssets.find(a => a.assetType === 'solution')?.pdfUrl : null,
+                        status: 'approved',
+                        approvedAt: serverTimestamp(),
+                        approvedBy: 'Admin (Direct)',
+                        submitterName: 'Admin Direct',
+                        submitterEmail: 'admin@uiu.ac.bd',
+                        courseSearch: `${courseCode} ${course.title} ${topic}`.toLowerCase(),
+                        materialGroup: materialType === 'Notes' ? 'notes' : 'questions',
+                        submittedAt: serverTimestamp(),
+                        createdAt: serverTimestamp()
+                    });
+
+                    try {
+                        await addDoc(collection(db, AUDIT_COLLECTION), {
+                            action: 'DIRECT_UPLOAD',
+                            adminEmail: currentUser?.email || 'admin@uiu.ac.bd',
+                            targetId: newDocRef.id,
+                            targetCourse: courseCode,
+                            notes: `Direct uploaded & approved material: ${courseCode} (${materialType} - ${examType})`,
+                            timestamp: serverTimestamp()
+                        });
+                    } catch (auditErr) {
+                        console.warn('Audit log write skipped:', auditErr);
+                    }
+
+                    showToast('Question uploaded and published directly!', 'success');
+                    closeAdminUploadModal();
+                    adminUploadForm.reset();
+                    resetAdminDropzone('adminMainDropzone', 'adminUpMainFile', 'adminMainDropContent');
+                    resetAdminDropzone('adminSolDropzone', 'adminUpSolFile', 'adminSolDropContent');
+
+                } catch (err) {
+                    console.error('Direct upload failed:', err);
+                    status.innerHTML = `<div style="font-size:0.8rem; color:var(--danger); margin-top:0.5rem;">Error: ${err.message}</div>`;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Publish Directly';
+                }
+            });
+        }
 
     </script>
     <!-- Mobile Bottom Navigation for Admin -->
