@@ -2063,9 +2063,10 @@
                 if (!isDocApproved(sub)) return false;
                 
                 if (filterType !== 'all') {
-                    const rawType = String(sub.materialType || sub.type || sub.materialGroup || 'question').trim().toLowerCase();
+                    const rawType = String(sub.materialType || sub.type || sub.materialGroup || '').trim().toLowerCase();
                     if (filterType === 'question') {
-                        if (!rawType.includes('question') && !rawType.includes('paper') && rawType !== 'lab' && rawType !== '') return false;
+                        // Midterm, Final, Quiz, Assignment, Lab, Question are all Question Papers
+                        if (rawType.includes('note') || rawType.includes('solution') || rawType.includes('sol')) return false;
                     } else if (filterType === 'note') {
                         if (!rawType.includes('note')) return false;
                     } else if (filterType === 'solution') {
@@ -2563,6 +2564,7 @@
                 }
                 renderQueueTable();
                 renderDashboardRecent();
+                renderApprovedTable();
 
                 // Audit Log
                 try {
