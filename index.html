@@ -1722,22 +1722,36 @@
                 <div id="zip-review-section" style="display:none; flex-direction:column; flex:1;">
                     <div class="zip-summary-bar">
                         <div style="display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap;">
-                            <span class="zip-stat-pill" style="color:var(--primary);"><i class="fas fa-file-pdf"></i> <span id="zip-stat-total">0</span> Questions Ready</span>
+                            <span class="zip-stat-pill" style="color:var(--primary);"><i class="fas fa-file-pdf"></i> <span id="zip-stat-total">0</span> Questions in Queue</span>
                             <span class="zip-stat-pill" style="color:var(--success);"><i class="fas fa-link"></i> <span id="zip-stat-solutions">0</span> Solutions Paired</span>
-                            <span class="zip-stat-pill" style="color:var(--warning);" id="zip-duplicate-stat"><i class="fas fa-exclamation-triangle"></i> <span id="zip-stat-duplicates">0</span> Existing Duplicates</span>
+                            <span class="zip-stat-pill" style="color:var(--danger);" id="zip-duplicate-stat"><i class="fas fa-exclamation-circle"></i> <span id="zip-stat-duplicates">0</span> Already Uploaded</span>
                         </div>
-                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <button type="button" class="btn btn-danger" id="btn-remove-duplicates" style="display:none; padding:0.3rem 0.75rem; font-size:0.8rem; background:var(--danger); color:white; border:none;" title="Remove all files that already exist in the Question Bank from the upload queue">
+                                <i class="fas fa-trash-alt"></i> Remove Already Uploaded (<span id="btn-dup-count">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem; color:var(--info); border-color:var(--info);" id="btn-check-duplicates" title="Scan database to check if any questions in queue are already uploaded">
+                                <i class="fas fa-sync-alt"></i> Check Uploaded Status
+                            </button>
                             <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem;" id="btn-zip-select-all"><i class="fas fa-check-square"></i> Select All</button>
                             <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem;" id="btn-zip-reset"><i class="fas fa-redo"></i> Change ZIP</button>
                         </div>
                     </div>
 
-                    <!-- Batch Set Overrides Toolbar -->
-                    <div style="display:flex; align-items:center; gap:0.75rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:0.6rem 0.85rem; margin-bottom:0.75rem; flex-wrap:wrap;">
-                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fas fa-sliders-h"></i> Batch Override:</span>
-                        <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <!-- Batch Set Overrides Toolbar & Filters -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:0.6rem 0.85rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fas fa-sliders-h"></i> Batch Override:</span>
                             <select id="batch-sem-select" class="filter-select" style="padding:0.3rem 0.6rem; font-size:0.8rem;"></select>
                             <button type="button" class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.75rem;" id="btn-batch-apply-sem">Apply Semester to All</button>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted);"><i class="fas fa-filter"></i> Filter Queue:</span>
+                            <select id="zip-filter-status" class="filter-select" style="padding:0.3rem 0.6rem; font-size:0.8rem;">
+                                <option value="all">Show All</option>
+                                <option value="new">Show Only New (Not Uploaded)</option>
+                                <option value="duplicate">Show Already Uploaded</option>
+                            </select>
                         </div>
                     </div>
 
@@ -3518,6 +3532,98 @@
 
         let currentZipInstance = null;
         let parsedZipEntries = []; // Array of parsed question objects
+        let zipFilterStatus = 'all'; // Track current filter: 'all', 'new', 'duplicate'
+
+        const btnCheckDuplicates = document.getElementById('btn-check-duplicates');
+        const btnRemoveDuplicates = document.getElementById('btn-remove-duplicates');
+        const zipFilterSelect = document.getElementById('zip-filter-status');
+
+        const normalizeFileName = (value) => String(value || '')
+            .replace(/\.[^/.]+$/, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
+
+        const isQueuedFileAlreadyUploaded = (queuedItem) => {
+            const queuedName = normalizeFileName(queuedItem.originalFilename || queuedItem.filePath);
+            const queuedCourse = String(queuedItem.courseCode || '').replace(/\s+/g, '').toUpperCase();
+            const queuedExam = String(queuedItem.examType || '').trim().toLowerCase();
+            const queuedSemester = String(queuedItem.semester || '').trim();
+
+            return allSubmissions.some(submission => {
+                const savedNames = [
+                    submission.originalFilename,
+                    submission.fileName,
+                    submission.pdfOriginalFilename,
+                    ...(Array.isArray(submission.materialAssets) ? submission.materialAssets.map(asset => asset.originalFilename || asset.fileName) : [])
+                ];
+                const sameFileName = queuedName && savedNames.some(name => normalizeFileName(name) === queuedName);
+                if (sameFileName) return true;
+
+                // A matching approved Midterm or Final is treated as an existing upload,
+                // even when the original filename was not saved with the submission.
+                const savedCourse = String(submission.courseCode || '').replace(/\s+/g, '').toUpperCase();
+                const savedExam = String(submission.examType || '').trim().toLowerCase();
+                const savedSemester = String(submission.semester || '').trim();
+                return Boolean(queuedCourse) &&
+                    (queuedExam === 'midterm' || queuedExam === 'final') &&
+                    savedCourse === queuedCourse &&
+                    savedExam === queuedExam &&
+                    savedSemester === queuedSemester &&
+                    isDocApproved(submission);
+            });
+        };
+
+        function refreshZipUploadedStatus({ render = true } = {}) {
+            let duplicateCount = 0;
+            parsedZipEntries.forEach(item => {
+                const isDuplicate = isQueuedFileAlreadyUploaded(item);
+                item.isDuplicate = isDuplicate;
+                if (isDuplicate) {
+                    duplicateCount++;
+                    item.selected = false;
+                }
+            });
+
+            const duplicateStat = document.getElementById('zip-duplicate-stat');
+            const duplicateCountLabel = document.getElementById('zip-stat-duplicates');
+            const removeCountLabel = document.getElementById('btn-dup-count');
+            if (duplicateStat) duplicateStat.style.display = duplicateCount ? 'inline-flex' : 'none';
+            if (duplicateCountLabel) duplicateCountLabel.textContent = duplicateCount;
+            if (removeCountLabel) removeCountLabel.textContent = duplicateCount;
+            if (btnRemoveDuplicates) btnRemoveDuplicates.style.display = duplicateCount ? 'inline-flex' : 'none';
+            if (render) renderZipParsedTable();
+            return duplicateCount;
+        }
+
+        if (btnCheckDuplicates) {
+            btnCheckDuplicates.addEventListener('click', () => {
+                const duplicateCount = refreshZipUploadedStatus();
+                showToast(duplicateCount
+                    ? `${duplicateCount} queued file${duplicateCount === 1 ? '' : 's'} already exist${duplicateCount === 1 ? 's' : ''} in the Question Bank.`
+                    : 'No queued files are already uploaded.', duplicateCount ? 'warning' : 'success');
+            });
+        }
+
+        if (btnRemoveDuplicates) {
+            btnRemoveDuplicates.addEventListener('click', () => {
+                const duplicateCount = refreshZipUploadedStatus({ render: false });
+                if (!duplicateCount) return;
+                if (!confirm(`Remove ${duplicateCount} already-uploaded file${duplicateCount === 1 ? '' : 's'} from this upload queue?`)) return;
+                parsedZipEntries = parsedZipEntries.filter(item => !item.isDuplicate);
+                zipFilterStatus = 'all';
+                if (zipFilterSelect) zipFilterSelect.value = 'all';
+                document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
+                refreshZipUploadedStatus();
+                showToast(`Removed ${duplicateCount} already-uploaded file${duplicateCount === 1 ? '' : 's'} from the queue.`, 'success');
+            });
+        }
+
+        if (zipFilterSelect) {
+            zipFilterSelect.addEventListener('change', event => {
+                zipFilterStatus = event.target.value;
+                renderZipParsedTable();
+            });
+        }
 
         function populateBatchSemesterDropdown() {
             if (batchSemSelect && batchSemSelect.options.length === 0) {
@@ -3872,11 +3978,7 @@
                 // Update UI counters
                 document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
                 document.getElementById('zip-stat-solutions').textContent = pairedSolutionsCount;
-                document.getElementById('zip-stat-duplicates').textContent = duplicateCount;
-                const dupStat = document.getElementById('zip-duplicate-stat');
-                if (dupStat) dupStat.style.display = duplicateCount > 0 ? 'inline-flex' : 'none';
-
-                renderZipParsedTable();
+                refreshZipUploadedStatus();
 
                 zipDropSection.style.display = 'none';
                 zipReviewSection.style.display = 'flex';
@@ -3893,6 +3995,8 @@
             zipTableTbody.innerHTML = '';
 
             parsedZipEntries.forEach((item, index) => {
+                if (zipFilterStatus === 'new' && item.isDuplicate) return;
+                if (zipFilterStatus === 'duplicate' && !item.isDuplicate) return;
                 const tr = document.createElement('tr');
                 tr.dataset.index = index;
 
