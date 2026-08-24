@@ -1957,32 +1957,23 @@
         };
 
         const decodeSemester = (semCode) => {
-            if(!semCode || String(semCode).length !== 3) return 'Unknown';
-            return String(semCode);
+            if(!semCode) return 'Unknown';
+            const str = String(semCode).trim();
+            if (str.length === 3) {
+                const yr = parseInt(str.substring(0, 2), 10);
+                const s = str.charAt(2);
+                const season = s === '1' ? 'Spring' : (s === '2' ? 'Summer' : (s === '3' ? 'Fall' : 'Term ' + s));
+                return `${season} 20${yr < 10 ? '0' + yr : yr} (${str})`;
+            }
+            return str;
         };
 
         const generateAdminSemesters = () => {
-            // Spring (1): Feb-Jun, Summer (2): Jul-Oct, Fall (3): Nov-Feb
-            const now = new Date();
-            const currentMonth = now.getMonth() + 1;
-            const currentYear = now.getFullYear();
-            let currentSemYear, currentSemSeason;
-            if (currentMonth >= 2 && currentMonth <= 6) {
-                currentSemSeason = 1;
-                currentSemYear = currentYear;
-            } else if (currentMonth >= 7 && currentMonth <= 10) {
-                currentSemSeason = 2;
-                currentSemYear = currentYear;
-            } else {
-                currentSemSeason = 3;
-                currentSemYear = currentMonth >= 11 ? currentYear : currentYear - 1;
-            }
-            const currentSemCode = parseInt(`${currentSemYear - 2000}${currentSemSeason}`);
             const semesters = [];
-            for (let y = 21; y <= 30; y++) {
+            // Generate from 2015 (151) up to 2030 (303)
+            for (let y = 15; y <= 30; y++) {
                 for (let s = 1; s <= 3; s++) {
                     const code = `${y}${s}`;
-                    if (parseInt(code) > currentSemCode) return semesters;
                     semesters.push({ code, label: decodeSemester(code) });
                 }
             }
@@ -3609,102 +3600,140 @@
             });
         }
 
-        // Automatic Filename & Path Parsing Engine
+        // Automatic Filename & Path Parsing Engine (Specialized for courseCode_Exam_Semester.pdf format)
         function parseQuestionMetadata(fullPath, fileName) {
             const cleanPath = (fullPath || '').replace(/\\/g, '/');
-            const baseName = fileName.replace(/\.[^/.]+$/, ""); // remove extension
-            const fullText = `${cleanPath} ${baseName}`;
-
-            // 1. Solution Detection
+            const baseName = fileName.replace(/\.[^/.]+$/, ""); // strip extension
+            
+            // 1. Check if solution file (e.g. EEE2113_Mid_172_Sol.pdf or EEE2113_Mid_172_Solution.pdf)
             const isSolution = /(?:^|[_\s\-\(\[])(?:solution|sol|ans|answer|solved)(?:[_\s\-\)\]]|$)/i.test(baseName) ||
                                cleanPath.toLowerCase().includes('/solution/') ||
                                cleanPath.toLowerCase().includes('/solutions/');
 
-            // 2. Course Code Detection
-            let matchedCourse = null;
-            
-            // Match pattern like CSE 1115, MATH 2201, EEE 2113, BDS 1201, PHY 2105, SOC 2101, ENG 1011, etc.
-            const codeRegex = /\b([A-Za-z]{2,4})\s*[-_]?\s*([0-9]{4}[A-Za-z]?)\b/i;
-            const codeMatch = fullText.match(codeRegex);
-            if (codeMatch) {
-                const formattedCode = `${codeMatch[1].toUpperCase()} ${codeMatch[2].toUpperCase()}`;
-                matchedCourse = CURRICULUM.find(c => c.code.replace(/\s+/g, '') === formattedCode.replace(/\s+/g, ''));
-                if (!matchedCourse) {
-                    matchedCourse = { code: formattedCode, title: getCourseTitle(formattedCode), trimester: 0 };
+            // Clean base name without solution keywords for core parsing
+            const cleanBase = baseName.replace(/(?:_|-|\s)?(?:solution|sol|ans|answer|solved)/gi, '').trim();
+
+            let detectedCourse = null;
+            let detectedExam = null;
+            let detectedSemester = null;
+
+            // Strategy 1: Direct Delimited Token Parsing (e.g. EEE2113_Mid_172, EEE2113_Final_171, CSE1115_Mid_241)
+            const tokens = cleanBase.split(/[_\-\s]+/).filter(Boolean);
+
+            for (let i = 0; i < tokens.length; i++) {
+                const token = tokens[i];
+                
+                // Test Course code token e.g. EEE2113, CSE1115, MATH2201, BDS1201
+                const cMatch = token.match(/^([A-Za-z]{2,4})\s*([0-9]{4}[A-Za-z]?)$/i);
+                if (cMatch && !detectedCourse) {
+                    const formatted = `${cMatch[1].toUpperCase()} ${cMatch[2].toUpperCase()}`;
+                    detectedCourse = CURRICULUM.find(c => c.code.replace(/\s+/g, '') === formatted.replace(/\s+/g, '')) || { code: formatted, title: getCourseTitle(formatted), trimester: 0 };
+                    continue;
+                }
+
+                // Test 3-digit semester code e.g. 172, 171, 183, 241, 233, 251 (years 10-39, term 1-3)
+                const sMatch = token.match(/^([0-9]{2})([1-3])$/);
+                if (sMatch && !detectedSemester) {
+                    detectedSemester = sMatch[0];
+                    continue;
+                }
+
+                // Test Exam type token e.g. Mid, Final, Quiz1, Lab, etc.
+                if (!detectedExam) {
+                    const tLow = token.toLowerCase();
+                    if (tLow.startsWith('mid')) detectedExam = 'Midterm';
+                    else if (tLow.startsWith('fin')) detectedExam = 'Final';
+                    else if (/^q(?:uiz)?[-_]?1$/i.test(token) || /^ct[-_]?1$/i.test(token)) detectedExam = 'Quiz 1';
+                    else if (/^q(?:uiz)?[-_]?2$/i.test(token) || /^ct[-_]?2$/i.test(token)) detectedExam = 'Quiz 2';
+                    else if (/^q(?:uiz)?[-_]?3$/i.test(token)) detectedExam = 'Quiz 3';
+                    else if (/^q(?:uiz)?[-_]?4$/i.test(token)) detectedExam = 'Quiz 4';
+                    else if (/^q(?:uiz)?$/i.test(token) || /^ct$/i.test(token)) detectedExam = 'Quiz';
+                    else if (/^lab/i.test(token)) detectedExam = 'Lab';
+                    else if (/^note/i.test(token)) detectedExam = 'Notes';
+                    else if (/^assign/i.test(token) || /^hw/i.test(token)) detectedExam = 'Assignment';
                 }
             }
 
-            // If no regex match, match curriculum titles & aliases
-            if (!matchedCourse) {
+            // Strategy 2: Fallback Regex & Alias Scan over full path and filename
+            const fullText = `${cleanPath} ${baseName}`;
+
+            if (!detectedCourse) {
+                const codeMatch = fullText.match(/\b([A-Za-z]{2,4})\s*[-_]?\s*([0-9]{4}[A-Za-z]?)\b/i);
+                if (codeMatch) {
+                    const formatted = `${codeMatch[1].toUpperCase()} ${codeMatch[2].toUpperCase()}`;
+                    detectedCourse = CURRICULUM.find(c => c.code.replace(/\s+/g, '') === formatted.replace(/\s+/g, '')) || { code: formatted, title: getCourseTitle(formatted), trimester: 0 };
+                }
+            }
+
+            if (!detectedCourse) {
                 for (const course of CURRICULUM) {
                     const cleanCode = course.code.replace(/\s+/g, '');
                     if (new RegExp(`\\b${cleanCode}\\b`, 'i').test(fullText)) {
-                        matchedCourse = course;
+                        detectedCourse = course;
                         break;
                     }
                     for (const alias of (course.aliases || [])) {
                         if (alias.length >= 2 && new RegExp(`\\b${alias.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i').test(fullText)) {
-                            matchedCourse = course;
+                            detectedCourse = course;
                             break;
                         }
                     }
-                    if (matchedCourse) break;
+                    if (detectedCourse) break;
                 }
             }
 
-            // 3. Exam Name & Material Type Detection
-            let examType = 'Midterm';
+            // Exam detection fallback
+            let examType = detectedExam || 'Midterm';
             let materialType = 'Question';
 
-            if (/\b(?:midterm|mid[-_ ]?term|mid)\b/i.test(fullText)) {
-                examType = 'Midterm';
-                materialType = 'Question';
-            } else if (/\b(?:final|finals|final[-_ ]?term|fin)\b/i.test(fullText)) {
-                examType = 'Final';
-                materialType = 'Question';
-            } else if (/\b(?:quiz[-_ ]?1|q1|ct[-_ ]?1|class[-_ ]?test[-_ ]?1)\b/i.test(fullText)) {
-                examType = 'Quiz 1';
-                materialType = 'Question';
-            } else if (/\b(?:quiz[-_ ]?2|q2|ct[-_ ]?2|class[-_ ]?test[-_ ]?2)\b/i.test(fullText)) {
-                examType = 'Quiz 2';
-                materialType = 'Question';
-            } else if (/\b(?:quiz[-_ ]?3|q3|ct[-_ ]?3)\b/i.test(fullText)) {
-                examType = 'Quiz 3';
-                materialType = 'Question';
-            } else if (/\b(?:quiz[-_ ]?4|q4|ct[-_ ]?4)\b/i.test(fullText)) {
-                examType = 'Quiz 4';
-                materialType = 'Question';
-            } else if (/\b(?:quiz|class[-_ ]?test|ct)\b/i.test(fullText)) {
-                examType = 'Quiz';
-                materialType = 'Question';
-            } else if (/\b(?:assignment[-_ ]?\d*|hw[-_ ]?\d*)\b/i.test(fullText)) {
-                examType = 'Assignment';
-                materialType = 'Question';
-            } else if (/\b(?:lab[-_ ]?final|lab[-_ ]?mid|lab[-_ ]?exam|lab[-_ ]?task|lab)\b/i.test(fullText)) {
-                examType = 'Lab';
-                materialType = 'Lab';
-            } else if (/\b(?:notes?|lecture[-_ ]?notes?|handnotes?|summary|slides?)\b/i.test(fullText)) {
-                examType = 'Notes';
-                materialType = 'Notes';
+            if (!detectedExam) {
+                if (/\b(?:midterm|mid[-_ ]?term|mid)\b/i.test(fullText)) {
+                    examType = 'Midterm';
+                } else if (/\b(?:final|finals|final[-_ ]?term|fin)\b/i.test(fullText)) {
+                    examType = 'Final';
+                } else if (/\b(?:quiz[-_ ]?1|q1|ct[-_ ]?1)\b/i.test(fullText)) {
+                    examType = 'Quiz 1';
+                } else if (/\b(?:quiz[-_ ]?2|q2|ct[-_ ]?2)\b/i.test(fullText)) {
+                    examType = 'Quiz 2';
+                } else if (/\b(?:quiz[-_ ]?3|q3|ct[-_ ]?3)\b/i.test(fullText)) {
+                    examType = 'Quiz 3';
+                } else if (/\b(?:quiz[-_ ]?4|q4|ct[-_ ]?4)\b/i.test(fullText)) {
+                    examType = 'Quiz 4';
+                } else if (/\b(?:quiz|class[-_ ]?test|ct)\b/i.test(fullText)) {
+                    examType = 'Quiz';
+                } else if (/\b(?:lab[-_ ]?final|lab[-_ ]?mid|lab[-_ ]?exam|lab[-_ ]?task|lab)\b/i.test(fullText)) {
+                    examType = 'Lab';
+                    materialType = 'Lab';
+                } else if (/\b(?:notes?|lecture[-_ ]?notes?|summary|slides?)\b/i.test(fullText)) {
+                    examType = 'Notes';
+                    materialType = 'Notes';
+                } else if (/\b(?:assignment[-_ ]?\d*|hw[-_ ]?\d*)\b/i.test(fullText)) {
+                    examType = 'Assignment';
+                }
+            } else {
+                if (examType === 'Lab') materialType = 'Lab';
+                if (examType === 'Notes') materialType = 'Notes';
             }
 
-            // 4. Semester Code Detection (e.g. 241, 233, 251, Spring 2024, Fall 23)
-            let semester = '';
-            let trimester = matchedCourse ? (matchedCourse.trimester || 1) : 1;
+            // Semester detection fallback: supports 151, 162, 171, 172, 183, 241, 251, etc.
+            let semester = detectedSemester || '';
+            let trimester = detectedCourse ? (detectedCourse.trimester || 1) : 1;
 
-            const semCodeMatch = fullText.match(/\b(2[1-9])([1-3])\b/);
-            if (semCodeMatch) {
-                semester = semCodeMatch[0];
-            } else {
-                const textSemMatch = fullText.match(/\b(Spring|Summer|Fall|Sp|Su|Fa)\s*[-_]?\s*(20[1-3][0-9]|[1-3][0-9])\b/i);
-                if (textSemMatch) {
-                    const seasonStr = textSemMatch[1].toLowerCase();
-                    let yr = textSemMatch[2];
-                    if (yr.length === 4) yr = yr.slice(2);
-                    let sDigit = '1';
-                    if (seasonStr.startsWith('su')) sDigit = '2';
-                    else if (seasonStr.startsWith('fa')) sDigit = '3';
-                    semester = `${yr}${sDigit}`;
+            if (!semester) {
+                const semCodeMatch = fullText.match(/\b([1-3][0-9])([1-3])\b/);
+                if (semCodeMatch) {
+                    semester = semCodeMatch[0];
+                } else {
+                    const textSemMatch = fullText.match(/\b(Spring|Summer|Fall|Sp|Su|Fa)\s*[-_]?\s*(20[1-3][0-9]|[1-3][0-9])\b/i);
+                    if (textSemMatch) {
+                        const seasonStr = textSemMatch[1].toLowerCase();
+                        let yr = textSemMatch[2];
+                        if (yr.length === 4) yr = yr.slice(2);
+                        let sDigit = '1';
+                        if (seasonStr.startsWith('su')) sDigit = '2';
+                        else if (seasonStr.startsWith('fa')) sDigit = '3';
+                        semester = `${yr}${sDigit}`;
+                    }
                 }
             }
 
@@ -3712,26 +3741,26 @@
                 semester = ADMIN_SEMESTERS[ADMIN_SEMESTERS.length - 1].code;
             }
 
-            // 5. Trimester Override from path/filename
+            // Trimester override if explicitly specified in path or filename
             const trimMatch = fullText.match(/\b(?:trimester|tri|t)\s*[-_]?\s*([1-9]|1[0-2])\b/i);
             if (trimMatch) {
                 trimester = parseInt(trimMatch[1], 10);
             }
 
-            // 6. Clean Topic/Title Generation
+            // Topic generation
             let topic = '';
             if (materialType === 'Question') {
                 topic = `${examType} Question ${semester ? decodeSemester(semester) : ''}`.trim();
             } else if (materialType === 'Lab') {
                 topic = `Lab Material ${semester ? decodeSemester(semester) : ''}`.trim();
             } else {
-                topic = `Lecture Notes ${matchedCourse ? matchedCourse.code : ''}`.trim();
+                topic = `Lecture Notes ${detectedCourse ? detectedCourse.code : ''}`.trim();
             }
 
             return {
                 isSolution,
-                courseCode: matchedCourse ? matchedCourse.code : '',
-                courseName: matchedCourse ? matchedCourse.title : '',
+                courseCode: detectedCourse ? detectedCourse.code : '',
+                courseName: detectedCourse ? detectedCourse.title : '',
                 examType,
                 materialType,
                 semester,
