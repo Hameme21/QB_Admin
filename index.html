@@ -566,6 +566,7 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -573,6 +574,10 @@
             opacity: 0;
             pointer-events: none;
             transition: var(--transition);
+            padding: 1rem;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         
         .modal-overlay.active {
@@ -862,6 +867,9 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            width: min(620px, calc(100vw - 2rem));
+            max-width: 100%;
+            box-sizing: border-box;
             max-height: 94vh;
             max-height: 94dvh;
             transform: translateY(20px);
@@ -898,6 +906,11 @@
             text-align: center;
             cursor: pointer;
             transition: var(--transition);
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            word-break: break-word;
         }
 
         .file-drop-area:hover, .file-drop-area.dragover {
@@ -1151,10 +1164,12 @@
             }
             .zip-modal-card {
                 width: 100vw;
+                max-width: 100vw;
                 height: 100vh;
                 height: 100dvh;
                 max-height: 100dvh;
                 border-radius: 0;
+                margin: 0;
             }
             .zip-drop-area {
                 padding: 1.5rem 1rem;
@@ -1199,9 +1214,11 @@
                 overflow-y: auto;
             }
             .modal-card {
-                width: 96vw;
-                max-height: 94vh;
-                max-height: 94dvh;
+                width: calc(100vw - 1rem);
+                max-width: calc(100vw - 1rem);
+                max-height: 96vh;
+                max-height: 96dvh;
+                margin: 0 auto;
             }
             .portal-loader {
                 padding: 1.5rem;
@@ -1325,13 +1342,15 @@
            ========================================================= */
         .zip-modal-card {
             background: var(--surface);
-            width: 96vw;
-            max-width: 1250px;
+            width: min(1250px, calc(100vw - 2rem));
+            max-width: 100%;
             max-height: 94vh;
+            max-height: 94dvh;
             border-radius: var(--radius-lg);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            box-sizing: border-box;
             box-shadow: var(--shadow-lg);
             border: 1px solid var(--border);
             transform: translateY(20px);
@@ -1350,6 +1369,11 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            word-break: break-word;
         }
 
         .zip-drop-area:hover, .zip-drop-area.dragover {
@@ -1382,6 +1406,9 @@
             border-radius: var(--radius);
             border: 1px solid var(--border);
             margin-bottom: 0.75rem;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
         }
 
         .zip-stat-pill {
@@ -1394,15 +1421,21 @@
 
         .zip-table-container {
             max-height: 440px;
+            overflow-x: auto;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             border: 1px solid var(--border);
             border-radius: var(--radius);
             margin-bottom: 0.75rem;
             background: var(--surface);
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .zip-table {
             width: 100%;
+            min-width: 950px;
             border-collapse: collapse;
             font-size: 0.825rem;
         }
@@ -1452,6 +1485,9 @@
             background: var(--surface-hover);
             border-radius: var(--radius);
             border: 1px solid var(--border);
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
         }
 
         .zip-progress-track {
@@ -1472,8 +1508,9 @@
         }
 
         .zip-console-log {
-            max-height: 130px;
+            max-height: 140px;
             overflow-y: auto;
+            overflow-x: auto;
             background: #0b0f19;
             color: #10b981;
             font-family: monospace;
@@ -1483,6 +1520,11 @@
             border: 1px solid #1e293b;
             margin-top: 0.5rem;
             line-height: 1.5;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+            word-break: break-all;
+            white-space: pre-wrap;
         }
     </style>
     <script>
@@ -1982,14 +2024,14 @@
 
     <!-- Direct Upload Modal (Instant Publish) -->
     <div class="modal-overlay" id="adminUploadModal">
-        <div class="modal-card" style="max-width: 620px; width:95%;">
+        <div class="modal-card" style="max-width: 620px; width: min(620px, calc(100vw - 1.5rem)); max-height: 92vh; max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;">
             <div class="modal-header">
                 <h3 class="modal-title" style="display:flex; align-items:center; gap:0.5rem; color:var(--primary);">
                     <i class="fas fa-cloud-upload-alt"></i> Direct Question Upload (Instant Publish)
                 </h3>
                 <button class="icon-btn" id="btn-close-admin-upload"><i class="fas fa-times"></i></button>
             </div>
-            <div class="modal-body" style="padding:1.25rem 1.5rem; display:block;">
+            <div class="modal-body" style="padding:1.25rem 1.5rem; display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; max-height:calc(92vh - 70px); max-height:calc(92dvh - 70px); box-sizing:border-box; width:100%;">
                 <form id="adminDirectUploadForm">
                     <div class="form-row-2col">
                         <div class="form-group" style="position:relative;">
@@ -2062,7 +2104,7 @@
 
                     <div id="adminUploadStatus"></div>
 
-                    <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
+                    <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem; flex-wrap:wrap;">
                         <button type="button" class="btn btn-outline" id="btn-cancel-admin-upload">Cancel</button>
                         <button type="submit" class="btn btn-primary" id="btn-submit-admin-upload" style="display:inline-flex; align-items:center; gap:0.4rem;">
                             <i class="fas fa-check-circle"></i> Publish Directly
@@ -2082,9 +2124,9 @@
                 </h3>
                 <button class="icon-btn" id="btn-close-admin-zip"><i class="fas fa-times"></i></button>
             </div>
-            <div class="modal-body" style="padding:1.25rem 1.5rem; display:flex; flex-direction:column; overflow-y:auto; max-height:calc(94vh - 70px);">
+            <div class="modal-body" style="padding:1.25rem 1.5rem; display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; max-height:calc(94vh - 70px); max-height:calc(94dvh - 70px); width:100%; box-sizing:border-box;">
                 <!-- Step 1: Drag & Drop ZIP File -->
-                <div id="zip-drop-section">
+                <div id="zip-drop-section" style="width:100%; box-sizing:border-box;">
                     <div class="zip-drop-area" id="zipDropzone" onclick="document.getElementById('zipFileInput').click()">
                         <input type="file" id="zipFileInput" accept=".zip" style="display:none;">
                         <i class="fas fa-file-archive" style="font-size:3rem; color:var(--warning); margin-bottom:0.75rem;"></i>
@@ -2112,7 +2154,7 @@
                 </div>
 
                 <!-- Step 2: Extracted Questions Review & Batch Edit Table (Hidden until ZIP parsed) -->
-                <div id="zip-review-section" style="display:none; flex-direction:column; flex:1;">
+                <div id="zip-review-section" style="display:none; flex-direction:column; flex:1; width:100%; max-width:100%; box-sizing:border-box; overflow-x:hidden;">
                     <div class="zip-summary-bar">
                         <div style="display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap;">
                             <span class="zip-stat-pill" style="color:var(--primary);"><i class="fas fa-file-pdf"></i> <span id="zip-stat-total">0</span> Questions in Queue</span>
@@ -2132,7 +2174,7 @@
                     </div>
 
                     <!-- Batch Set Overrides Toolbar & Filters -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:0.6rem 0.85rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:0.6rem 0.85rem; margin-bottom:0.75rem; flex-wrap:wrap; width:100%; max-width:100%; box-sizing:border-box;">
                         <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
                             <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fas fa-sliders-h"></i> Batch Override:</span>
                             <select id="batch-sem-select" class="filter-select" style="padding:0.3rem 0.6rem; font-size:0.8rem;"></select>
@@ -2183,7 +2225,7 @@
                     </div>
 
                     <!-- Bottom Action Buttons -->
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:1rem; border-top:1px solid var(--border);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:1rem; border-top:1px solid var(--border); flex-wrap:wrap; gap:0.5rem; width:100%; box-sizing:border-box;">
                         <button type="button" class="btn btn-outline" id="btn-cancel-zip-upload">Cancel</button>
                         <button type="button" class="btn btn-primary" id="btn-start-zip-upload" style="background:linear-gradient(135deg, var(--warning), #d97706); border:none; display:inline-flex; align-items:center; gap:0.5rem; font-weight:700;">
                             <i class="fas fa-cloud-upload-alt"></i> Publish Selected (<span id="zip-selected-count">0</span>) Questions
@@ -3580,53 +3622,90 @@
             });
         }
 
-        async function uploadToCloudinary(assetType, file, courseCode, topic, onProgress) {
-            const signature = await requestUploadSignature(assetType, courseCode, topic);
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('api_key', signature.apiKey);
-            formData.append('signature', signature.signature);
-            Object.entries(signature.uploadParams || {}).forEach(([key, value]) => {
-                formData.append(key, value);
-            });
-            
-            const data = await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', signature.uploadUrl, true);
-                if (xhr.upload && typeof onProgress === 'function') {
-                    xhr.upload.onprogress = (e) => {
-                        if (e.lengthComputable) {
-                            const p = Math.round((e.loaded / e.total) * 100);
-                            onProgress(p);
-                        }
-                    };
-                }
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try { resolve(JSON.parse(xhr.responseText)); } catch (err) { reject(err); }
-                    } else {
-                        try {
-                            const errData = JSON.parse(xhr.responseText);
-                            reject(new Error(errData.error?.message || `Upload failed with HTTP ${xhr.status}`));
-                        } catch {
-                            reject(new Error(`Upload failed with HTTP ${xhr.status}`));
-                        }
-                    }
-                };
-                xhr.onerror = () => reject(new Error('Network error during file upload to Cloudinary'));
-                xhr.send(formData);
-            });
+        async function uploadToCloudinary(assetType, file, courseCode, topic, onProgress, onStatus) {
+            const maxAttempts = 4;
+            let attempt = 0;
+            let lastError = null;
 
-            return {
-                assetType,
-                topic,
-                pdfUrl: data.secure_url,
-                cloudinaryPublicId: data.public_id,
-                cloudinaryResourceType: data.resource_type || 'raw',
-                cloudinaryAssetId: data.asset_id || '',
-                bytes: data.bytes || file.size,
-                originalFilename: data.original_filename || file.name
-            };
+            while (attempt < maxAttempts) {
+                attempt++;
+                try {
+                    const signature = await requestUploadSignature(assetType, courseCode, topic);
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('api_key', signature.apiKey);
+                    formData.append('signature', signature.signature);
+                    Object.entries(signature.uploadParams || {}).forEach(([key, value]) => {
+                        formData.append(key, value);
+                    });
+                    
+                    const data = await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', signature.uploadUrl, true);
+                        if (xhr.upload && typeof onProgress === 'function') {
+                            xhr.upload.onprogress = (e) => {
+                                if (e.lengthComputable) {
+                                    const p = Math.round((e.loaded / e.total) * 100);
+                                    onProgress(p);
+                                }
+                            };
+                        }
+                        xhr.onload = () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                try { resolve(JSON.parse(xhr.responseText)); } catch (err) { reject(err); }
+                            } else {
+                                let errMsg = `Upload failed with HTTP ${xhr.status}`;
+                                try {
+                                    const errData = JSON.parse(xhr.responseText);
+                                    if (errData.error?.message) errMsg = errData.error.message;
+                                } catch (_) {}
+                                const err = new Error(errMsg);
+                                err.status = xhr.status;
+                                const retryHeader = xhr.getResponseHeader('Retry-After');
+                                if (retryHeader) err.retryAfter = parseInt(retryHeader, 10);
+                                reject(err);
+                            }
+                        };
+                        xhr.onerror = () => {
+                            const err = new Error('Network error during file upload to Cloudinary');
+                            err.isNetwork = true;
+                            reject(err);
+                        };
+                        xhr.send(formData);
+                    });
+
+                    return {
+                        assetType,
+                        topic,
+                        pdfUrl: data.secure_url,
+                        cloudinaryPublicId: data.public_id,
+                        cloudinaryResourceType: data.resource_type || 'raw',
+                        cloudinaryAssetId: data.asset_id || '',
+                        bytes: data.bytes || file.size,
+                        originalFilename: data.original_filename || file.name
+                    };
+                } catch (err) {
+                    lastError = err;
+                    const errMsg = (err.message || '').toLowerCase();
+                    const isThrottled = err.status === 429 || err.status === 420 || err.status === 503 ||
+                                        errMsg.includes('slow down') || errMsg.includes('processing capacity') ||
+                                        errMsg.includes('rate limit');
+                    const canRetry = attempt < maxAttempts && (isThrottled || err.isNetwork);
+
+                    if (canRetry) {
+                        const baseDelayMs = err.retryAfter ? (err.retryAfter * 1000) : (Math.pow(2, attempt) * 2000 + Math.floor(Math.random() * 1000));
+                        const delaySec = Math.round(baseDelayMs / 1000);
+                        const notice = `Cloudinary processing capacity busy / throttled. Cooling down ${delaySec}s before retry (attempt ${attempt}/${maxAttempts - 1})...`;
+                        if (typeof onStatus === 'function') onStatus(notice);
+                        console.warn(`[Cloudinary Retry ${attempt}/${maxAttempts - 1}] Waiting ${delaySec}s due to: ${err.message}`);
+                        await new Promise(r => setTimeout(r, baseDelayMs));
+                    } else {
+                        throw err;
+                    }
+                }
+            }
+
+            throw lastError || new Error('Upload failed after multiple retries.');
         }
         const openAdminUploadBtn = document.getElementById('open-admin-upload-btn');
         const sidebarUploadBtn = document.getElementById('sidebar-upload-btn');
@@ -4642,6 +4721,11 @@
                 let successCount = 0;
                 let failureCount = 0;
 
+                const logStatus = (msg) => {
+                    zipConsoleLog.innerHTML += `<div style="color:#f59e0b;">⏳ ${msg}</div>`;
+                    zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
+                };
+
                 for (let i = 0; i < selectedItems.length; i++) {
                     const item = selectedItems[i];
                     const percent = Math.round(((i) / selectedItems.length) * 100);
@@ -4649,6 +4733,11 @@
                     zipProgressPercent.textContent = `${percent}%`;
                     zipProgressFill.style.width = `${percent}%`;
                     zipProgressLabel.innerHTML = `<i class="fas fa-spinner fa-spin"></i> [${i + 1}/${selectedItems.length}] Uploading ${item.courseCode} ${item.examType}...`;
+
+                    // Polite delay between consecutive files to avoid tripping Cloudinary burst limits
+                    if (i > 0) {
+                        await new Promise(r => setTimeout(r, 1500));
+                    }
 
                     try {
                         // 1. Extract Main File as Blob from JSZip
@@ -4658,16 +4747,17 @@
                         zipConsoleLog.innerHTML += `<div>[${i + 1}/${selectedItems.length}] Uploading Cloudinary asset for ${item.courseCode} (${item.originalFilename})...</div>`;
                         zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
 
-                        const mainAsset = await uploadToCloudinary(item.materialType === 'Notes' ? 'note' : 'question', mainFile, item.courseCode, item.topic);
+                        const mainAsset = await uploadToCloudinary(item.materialType === 'Notes' ? 'note' : 'question', mainFile, item.courseCode, item.topic, null, logStatus);
                         const materialAssets = [mainAsset];
 
                         // 2. Upload Paired Solution if present
                         let solPdfUrl = null;
                         if (item.pairedSolution && item.pairedSolution.zipEntry) {
+                            await new Promise(r => setTimeout(r, 1000));
                             zipConsoleLog.innerHTML += `<div style="color:#38bdf8;">→ Uploading paired solution (${item.pairedSolution.originalFilename})...</div>`;
                             const solBlob = await item.pairedSolution.zipEntry.async('blob');
                             const solFile = new File([solBlob], item.pairedSolution.originalFilename, { type: 'application/pdf' });
-                            const solAsset = await uploadToCloudinary('solution', solFile, item.courseCode, item.topic);
+                            const solAsset = await uploadToCloudinary('solution', solFile, item.courseCode, item.topic, null, logStatus);
                             materialAssets.push(solAsset);
                             solPdfUrl = solAsset.pdfUrl;
                         }
@@ -4699,6 +4789,8 @@
                         const newDocRef = await addDoc(collection(db, QUESTION_COLLECTION), newDocData);
 
                         successCount++;
+                        item.selected = false;
+                        item.isDuplicate = true;
                         zipConsoleLog.innerHTML += `<div style="color:#10b981;">✔ Successfully published: ${item.courseCode} - ${item.examType} (${item.semester}) [ID: ${newDocRef.id}]</div>`;
                         zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
 
@@ -4709,6 +4801,10 @@
                         zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
                     }
                 }
+
+                // Refresh table checkboxes & status so published items are marked and unchecked
+                refreshZipUploadedStatus({ render: true });
+                updateZipSelectedCount();
 
                 // Final progress
                 zipProgressPercent.textContent = '100%';
@@ -4736,7 +4832,11 @@
                 showToast(`Batch Upload Complete: ${successCount} questions published directly!`, successCount > 0 ? 'success' : 'error');
                 btnStartZipUpload.disabled = false;
                 if (btnZipReset) btnZipReset.disabled = false;
-                btnStartZipUpload.innerHTML = '<i class="fas fa-check-double"></i> Batch Upload Finished';
+                if (failureCount > 0) {
+                    btnStartZipUpload.innerHTML = `<i class="fas fa-redo"></i> Retry Failed (${failureCount}) Questions`;
+                } else {
+                    btnStartZipUpload.innerHTML = '<i class="fas fa-check-double"></i> Batch Upload Finished';
+                }
 
                 // Re-render dashboard tables
                 fetchSubmissions();
