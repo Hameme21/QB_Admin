@@ -75,6 +75,7 @@
             color: var(--text-main);
             display: flex;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             transition: background 0.4s ease, color 0.3s ease;
         }
@@ -338,17 +339,47 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 2rem;
+            position: relative;
+            z-index: 20;
         }
         
         .header-title {
             font-size: 1.25rem;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
+            flex-wrap: nowrap;
+        }
+
+        .header-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+            border-radius: var(--radius);
+        }
+
+        .header-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.8rem;
+            text-decoration: none;
+            font-weight: 600;
+            border-color: var(--primary);
+            color: var(--primary);
+            white-space: nowrap;
+            flex-shrink: 0;
+            border-radius: var(--radius);
         }
 
         .search-bar {
@@ -358,7 +389,8 @@
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 0.5rem 1rem;
-            width: 300px;
+            width: 260px;
+            transition: var(--transition);
         }
         
         .search-bar input {
@@ -383,6 +415,7 @@
             align-items: center;
             justify-content: center;
             transition: var(--transition);
+            flex-shrink: 0;
         }
         
         .icon-btn:hover {
@@ -396,6 +429,7 @@
             overflow-y: auto;
             padding: 2rem;
             display: none;
+            -webkit-overflow-scrolling: touch;
         }
         
         .page-content.active {
@@ -779,22 +813,21 @@
         /* Mobile Bottom Nav Bar */
         .mobile-bottom-nav {
             position: fixed;
-            bottom: 1.25rem;
-            left: 0;
-            right: 0;
-            margin: 0 auto;
-            width: 220px;
-            height: 56px;
-            background: rgba(17, 24, 39, 0.9);
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(340px, calc(100vw - 2rem));
+            height: 54px;
+            background: rgba(17, 24, 39, 0.92);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 9999px;
             display: none;
             align-items: center;
-            justify-content: space-around;
-            padding: 0 0.5rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            justify-content: space-between;
+            padding: 0 0.75rem;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
             z-index: 9999;
         }
 
@@ -803,20 +836,138 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             color: #94a3b8;
             text-decoration: none;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1;
-            font-size: 1.05rem;
+            font-size: 1rem;
+            flex-shrink: 0;
         }
 
         .bottom-nav-item.active {
             color: #ffffff;
             background: var(--primary);
             box-shadow: 0 4px 15px rgba(243, 112, 33, 0.5);
+        }
+
+        /* Form and Component Enhancements */
+        .modal-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            max-height: 94vh;
+            max-height: 94dvh;
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: translateY(0);
+        }
+
+        .input-control {
+            width: 100%;
+            padding: 0.6rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .input-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(243, 112, 33, 0.1);
+        }
+
+        .file-drop-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            background: var(--surface-hover);
+            padding: 1.25rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .file-drop-area:hover, .file-drop-area.dragover {
+            border-color: var(--primary);
+            background: rgba(243, 112, 33, 0.08);
+        }
+
+        .file-drop-area.has-file {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.06);
+        }
+
+        .form-row-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .form-row-3col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .table-actions-group {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+        }
+
+        .nowrap-cell {
+            white-space: nowrap;
+        }
+
+        .preview-inner-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            min-height: 550px;
+        }
+
+        .preview-iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 620px;
+            border: none;
+            background: #fff;
+        }
+
+        .app-footer {
+            margin-top: 1.5rem;
+            padding: 1rem 1rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            width: 100%;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 992px) {
+            .header {
+                padding: 0 1rem;
+            }
+            .search-bar {
+                width: 180px;
+            }
         }
 
         @media (max-width: 768px) {
@@ -827,7 +978,230 @@
                 display: none;
             }
             .main-content {
-                padding-bottom: 6rem;
+                padding-bottom: 0;
+            }
+            .page-content {
+                padding: 1rem 0.75rem 6.5rem 0.75rem;
+            }
+            .header {
+                height: auto;
+                min-height: 58px;
+                padding: 0.5rem 0.85rem;
+                gap: 0.5rem;
+            }
+            .header-title {
+                font-size: 1.1rem;
+            }
+            .header-actions {
+                gap: 0.4rem;
+            }
+            .header-actions .btn-text {
+                display: none;
+            }
+            .header-link-btn {
+                display: none; /* Already available on mobile bottom nav */
+            }
+            .header-action-btn {
+                padding: 0.45rem 0.6rem !important;
+                font-size: 0.85rem !important;
+            }
+            .search-bar {
+                width: 130px;
+                padding: 0.35rem 0.6rem;
+            }
+            .search-bar input {
+                font-size: 0.78rem;
+            }
+            .icon-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 1.05rem;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                margin-bottom: 1.25rem;
+            }
+            .stat-card {
+                padding: 0.85rem 0.75rem;
+                gap: 0.6rem;
+            }
+            .stat-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 1.15rem;
+                border-radius: 8px;
+            }
+            .stat-value {
+                font-size: 1.35rem;
+            }
+            .stat-label {
+                font-size: 0.72rem;
+                line-height: 1.2;
+            }
+            .card-header {
+                padding: 0.85rem 1rem;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .card-title {
+                font-size: 0.95rem;
+                word-break: break-word;
+            }
+            th, td {
+                padding: 0.65rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            .filters-bar {
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+            }
+            .filters-bar .filter-select {
+                flex: 1 1 calc(50% - 0.25rem);
+                min-width: 130px;
+                font-size: 0.825rem;
+                padding: 0.45rem 0.75rem;
+            }
+            .filters-bar input.filter-select {
+                flex: 1 1 100%;
+                min-width: 100%;
+            }
+            .toast-container {
+                bottom: 5.5rem;
+                right: 1rem;
+                left: 1rem;
+            }
+            .toast {
+                width: 100%;
+                font-size: 0.85rem;
+                padding: 0.75rem 1rem;
+            }
+            .app-footer {
+                display: none;
+            }
+
+            /* Responsive Modals */
+            .modal-container {
+                width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                max-height: 100dvh;
+                border-radius: 0;
+            }
+            .modal-header {
+                padding: 0.75rem 1rem;
+            }
+            .modal-title {
+                font-size: 1rem;
+            }
+            .modal-body {
+                flex-direction: column;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 0;
+            }
+            .modal-preview {
+                flex: none;
+                width: 100%;
+                height: 290px;
+                min-height: 240px;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 2px solid var(--border);
+            }
+            .preview-tabs {
+                padding: 0 0.5rem;
+                gap: 0.25rem;
+            }
+            .preview-tab {
+                padding: 0.5rem 0.85rem;
+                font-size: 0.825rem;
+            }
+            .preview-content {
+                min-height: 180px;
+                height: calc(100% - 40px);
+                padding: 0;
+            }
+            .preview-content iframe, .preview-iframe {
+                min-height: 180px !important;
+                height: 100% !important;
+            }
+            .preview-inner-wrapper {
+                min-height: 180px !important;
+            }
+            .modal-details {
+                flex: none;
+                width: 100%;
+                padding: 1rem 1rem 3rem 1rem;
+                max-height: none;
+                overflow-y: visible;
+                gap: 1rem;
+            }
+            .detail-group p {
+                font-size: 0.9rem;
+                word-break: break-word;
+            }
+            .form-row-3col {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            .form-row-2col {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            .zip-modal-card {
+                width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                max-height: 100dvh;
+                border-radius: 0;
+            }
+            .zip-drop-area {
+                padding: 1.5rem 1rem;
+            }
+            .zip-drop-area h3 {
+                font-size: 1rem;
+            }
+            .zip-drop-area i.fa-file-archive {
+                font-size: 2.2rem;
+            }
+            .zip-summary-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.6rem;
+            }
+            .zip-summary-bar > div {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+                justify-content: space-between;
+            }
+            .zip-table-container {
+                max-height: 320px;
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .zip-table th, .zip-table td {
+                padding: 0.4rem 0.5rem;
+                font-size: 0.75rem;
+                white-space: nowrap;
+            }
+            #gmailModal .modal-container {
+                height: auto;
+                max-height: 94vh;
+                max-height: 94dvh;
+                width: 95vw;
+                border-radius: var(--radius-lg);
+            }
+            #gmailModal .modal-body {
+                padding: 1rem;
+                max-height: calc(94dvh - 65px);
+                overflow-y: auto;
+            }
+            .modal-card {
+                width: 96vw;
+                max-height: 94vh;
+                max-height: 94dvh;
             }
             .portal-loader {
                 padding: 1.5rem;
@@ -840,6 +1214,25 @@
             }
             .portal-loader-spinner {
                 width: 160px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-title {
+                font-size: 1rem;
+            }
+            .search-bar {
+                display: none;
+            }
+            #notif-dropdown {
+                right: 5px !important;
+                width: calc(100vw - 10px) !important;
+                max-width: 330px !important;
+            }
+            .auth-card {
+                padding: 1.5rem 1.25rem;
+                margin: 1rem;
+                max-width: calc(100vw - 2rem);
             }
         }
 
@@ -1188,14 +1581,14 @@
                 <h1 class="header-title" id="page-title">Dashboard</h1>
                 
                 <div class="header-actions">
-                    <button class="btn btn-warning" id="open-admin-zip-upload-btn" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; font-size:0.8rem; background:linear-gradient(135deg, #f59e0b, #d97706); color:white; border:none;" title="Batch Upload Questions from ZIP File">
-                        <i class="fas fa-file-archive"></i> Bulk ZIP Upload
+                    <button class="btn btn-warning header-action-btn" id="open-admin-zip-upload-btn" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:white; border:none;" title="Batch Upload Questions from ZIP File">
+                        <i class="fas fa-file-archive"></i> <span class="btn-text">Bulk ZIP Upload</span>
                     </button>
-                    <button class="btn btn-primary" id="open-admin-upload-btn" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; font-size:0.8rem;" title="Upload Question Directly">
-                        <i class="fas fa-plus-circle"></i> Upload Question
+                    <button class="btn btn-primary header-action-btn" id="open-admin-upload-btn" title="Upload Question Directly">
+                        <i class="fas fa-plus-circle"></i> <span class="btn-text">Upload Question</span>
                     </button>
-                    <a href="https://uiu-question-bank.vercel.app/" target="_blank" class="btn btn-outline" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.85rem; font-size:0.8rem; text-decoration:none; font-weight:600; border-color:var(--primary); color:var(--primary);" title="Open Live Question Bank Web">
-                        <i class="fas fa-external-link-alt"></i> Question Bank ↗
+                    <a href="https://uiu-question-bank.vercel.app/" target="_blank" class="btn btn-outline header-link-btn" title="Open Live Question Bank Web">
+                        <i class="fas fa-external-link-alt"></i> <span class="btn-text">Question Bank ↗</span>
                     </a>
                     <button class="icon-btn" id="refresh-btn" title="Refresh Data"><i class="fas fa-sync-alt"></i></button>
                     <button class="icon-btn" id="notif-perm-btn" title="View Notifications" style="position:relative;">
@@ -1424,7 +1817,7 @@
                 </div>
             </section>
             <!-- Admin Footer -->
-            <footer style="margin-top: 1.5rem; padding: 1rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; width: 100%;">
+            <footer class="app-footer">
                 <div style="font-weight: 600; color: var(--text-main); margin-bottom: 0.15rem;">©copyright© 2026 Hameme21</div>
                 <div style="font-size: 0.75rem; opacity: 0.8;">version 1.0.0</div>
             </footer>
@@ -1461,7 +1854,7 @@
                             <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Course / Subject</label>
                             <select id="edit-course" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);"></select>
                         </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+                        <div class="form-row-2col">
                             <div>
                                 <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Semester</label>
                                 <select id="edit-semester" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);"></select>
@@ -1471,7 +1864,7 @@
                                 <select id="edit-trimester" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);"></select>
                             </div>
                         </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+                        <div class="form-row-2col">
                             <div>
                                 <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Type</label>
                                 <select id="edit-type" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);">
@@ -1598,7 +1991,7 @@
             </div>
             <div class="modal-body" style="padding:1.25rem 1.5rem; display:block;">
                 <form id="adminDirectUploadForm">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+                    <div class="form-row-2col">
                         <div class="form-group" style="position:relative;">
                             <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Course Code / Title *</label>
                             <input type="text" id="adminUpCourseSearch" class="input-control" placeholder="Search course code..." required autocomplete="off">
@@ -1615,7 +2008,7 @@
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+                    <div class="form-row-3col">
                         <div class="form-group">
                             <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Semester Code *</label>
                             <select id="adminUpSemester" class="input-control" required></select>
@@ -2068,17 +2461,17 @@
             const googleDocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
             if (isPdf) {
                 container.innerHTML = `
-                    <div style="display:flex;flex-direction:column;height:100%;width:100%;min-height:550px;">
-                        <div style="background:var(--bg);padding:0.5rem 1rem;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:space-between;align-items:center;font-size:0.85rem;">
-                            <span style="color:var(--text-muted);font-weight:600;"><i class="fas fa-file-pdf" style="color:var(--danger);margin-right:0.4rem;"></i> Document Preview</span>
-                            <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
-                                <button type="button" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;" onclick="document.getElementById('adminPreviewIframe').src='${url}'"><i class="fas fa-eye"></i> Direct PDF</button>
-                                <button type="button" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;" onclick="document.getElementById('adminPreviewIframe').src='${googleDocsUrl}'"><i class="fas fa-file-alt"></i> Google Viewer</button>
-                                <a href="${url}" target="_blank" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;"><i class="fas fa-external-link-alt"></i> Open Tab</a>
-                                <button type="button" class="btn btn-primary" style="padding:0.25rem 0.6rem;font-size:0.75rem;" onclick="forceDownloadFile('${url}', '${label}.pdf')"><i class="fas fa-download"></i> Save</button>
+                    <div class="preview-inner-wrapper">
+                        <div style="background:var(--bg);padding:0.45rem 0.85rem;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:space-between;align-items:center;font-size:0.825rem;">
+                            <span style="color:var(--text-muted);font-weight:600;"><i class="fas fa-file-pdf" style="color:var(--danger);margin-right:0.4rem;"></i> Preview</span>
+                            <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
+                                <button type="button" class="btn btn-outline" style="padding:0.2rem 0.5rem;font-size:0.75rem;" onclick="document.getElementById('adminPreviewIframe').src='${url}'"><i class="fas fa-eye"></i> Direct PDF</button>
+                                <button type="button" class="btn btn-outline" style="padding:0.2rem 0.5rem;font-size:0.75rem;" onclick="document.getElementById('adminPreviewIframe').src='${googleDocsUrl}'"><i class="fas fa-file-alt"></i> Google Viewer</button>
+                                <a href="${url}" target="_blank" class="btn btn-outline" style="padding:0.2rem 0.5rem;font-size:0.75rem;"><i class="fas fa-external-link-alt"></i> Open Tab</a>
+                                <button type="button" class="btn btn-primary" style="padding:0.2rem 0.5rem;font-size:0.75rem;" onclick="forceDownloadFile('${url}', '${label}.pdf')"><i class="fas fa-download"></i> Save</button>
                             </div>
                         </div>
-                        <iframe id="adminPreviewIframe" src="${googleDocsUrl}" style="width:100%;height:100%;min-height:620px;border:none;background:#fff;" title="PDF Preview"></iframe>
+                        <iframe id="adminPreviewIframe" class="preview-iframe" src="${googleDocsUrl}" title="PDF Preview"></iframe>
                     </div>
                 `;
             } else {
@@ -2243,12 +2636,26 @@
                     const titleMap = {
                         'dashboard': 'Dashboard',
                         'queue': 'Review Queue',
+                        'approved': 'Approved Questions',
                         'audit': 'Audit Logs'
                     };
                     document.getElementById('page-title').textContent = titleMap[targetId] || 'Admin Portal';
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
+
+            const globalSearchInput = document.getElementById('global-search');
+            if (globalSearchInput) {
+                globalSearchInput.addEventListener('input', (e) => {
+                    const val = e.target.value;
+                    const filterSearch = document.getElementById('filter-search');
+                    const filterApprovedSearch = document.getElementById('filter-approved-search');
+                    if (filterSearch) filterSearch.value = val;
+                    if (filterApprovedSearch) filterApprovedSearch.value = val;
+                    renderQueueTable();
+                    renderApprovedTable();
+                });
+            }
 
             const viewAllBtn = document.getElementById('view-all-btn');
             if (viewAllBtn) {
@@ -2406,18 +2813,20 @@
                 const submitterText = sub.submitterEmail || sub.submitterName || sub.approvedByEmail || 'Admin';
 
                 tr.innerHTML = `
-                    <td><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
-                    <td>${trimText}</td>
+                    <td class="nowrap-cell"><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
+                    <td class="nowrap-cell">${trimText}</td>
                     <td>${sub.topic || sub.examType || '-'}</td>
-                    <td><span class="badge badge-approved">${capitalize(displayType)}</span></td>
+                    <td class="nowrap-cell"><span class="badge badge-approved">${capitalize(displayType)}</span></td>
                     <td>${submitterText}</td>
-                    <td><span class="badge badge-approved">Approved</span></td>
+                    <td class="nowrap-cell"><span class="badge badge-approved">Approved</span></td>
                     <td>
-                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
-                        <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Re-Review / Edit Status">
-                            <i class="fas fa-edit"></i> Re-Review
-                        </button>
-                        <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Approved Material"><i class="fas fa-trash-alt"></i> Delete</button>
+                        <div class="table-actions-group">
+                            <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                            <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Re-Review / Edit Status">
+                                <i class="fas fa-edit"></i> Re-Review
+                            </button>
+                            <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Approved Material"><i class="fas fa-trash-alt"></i> Delete</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2554,13 +2963,15 @@
                         const mainName = formatPdfDownloadName(sub, false);
                         const cCode = sub.courseCode || sub.course || 'N/A';
                         tr.innerHTML = `
-                            <td><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
+                            <td class="nowrap-cell"><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
                             <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
-                            <td>${capitalize(sub.materialType || sub.type || 'Question')}</td>
-                            <td>${formatDate(sub)}</td>
+                            <td class="nowrap-cell">${capitalize(sub.materialType || sub.type || 'Question')}</td>
+                            <td class="nowrap-cell">${formatDate(sub)}</td>
                             <td>
-                                <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
-                                <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Review</button>
+                                <div class="table-actions-group">
+                                    <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                                    <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Review</button>
+                                </div>
                             </td>
                         `;
                         tbodyPending.appendChild(tr);
@@ -2581,14 +2992,16 @@
                         const mainName = formatPdfDownloadName(sub, false);
                         const cCode = sub.courseCode || sub.course || 'N/A';
                         tr.innerHTML = `
-                            <td><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
+                            <td class="nowrap-cell"><strong>${cCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(cCode)}</small></td>
                             <td>${sub.topic || sub.examType || 'Material'}<br><small style="color:var(--text-muted);">${decodeSemester(sub.semester)}</small></td>
-                            <td><span class="badge badge-approved">${capitalize(sub.materialType || sub.type || 'Question')}</span></td>
-                            <td>${formatDate(sub)}</td>
+                            <td class="nowrap-cell"><span class="badge badge-approved">${capitalize(sub.materialType || sub.type || 'Question')}</span></td>
+                            <td class="nowrap-cell">${formatDate(sub)}</td>
                             <td>
-                                <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
-                                <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;">Review</button>
-                                <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Approved Material"><i class="fas fa-trash-alt"></i></button>
+                                <div class="table-actions-group">
+                                    <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                                    <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Review</button>
+                                    <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Approved Material"><i class="fas fa-trash-alt"></i></button>
+                                </div>
                             </td>
                         `;
                         tbodyApproved.appendChild(tr);
@@ -2643,20 +3056,20 @@
                 const fileUrl = getMainFileUrl(sub) || '#';
                 const mainName = formatPdfDownloadName(sub, false);
                 tr.innerHTML = `
-                    <td><strong>${sub.courseCode}</strong></td>
-                    <td>${sub.trimester ? 'T' + sub.trimester : '-'} | ${decodeSemester(sub.semester)}</td>
+                    <td class="nowrap-cell"><strong>${sub.courseCode}</strong></td>
+                    <td class="nowrap-cell">${sub.trimester ? 'T' + sub.trimester : '-'} | ${decodeSemester(sub.semester)}</td>
                     <td>${sub.topic || '-'}</td>
-                    <td>${capitalize(sub.materialType || sub.type || 'Question')}</td>
+                    <td class="nowrap-cell">${capitalize(sub.materialType || sub.type || 'Question')}</td>
                     <td>${sub.submitterEmail || 'Anonymous'}</td>
-                    <td><span class="badge ${getBadgeClass(status)}">${capitalize(status.replace('_', ' '))}</span></td>
+                    <td class="nowrap-cell"><span class="badge ${getBadgeClass(status)}">${capitalize(status.replace('_', ' '))}</span></td>
                     <td>
-                        <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Download PDF"><i class="fas fa-download"></i></button>
-                        ${status !== 'approved' ? `<button class="btn btn-outline btn-quick-approve" data-id="${sub.id}" style="color:var(--success); border-color:var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Approve"><i class="fas fa-check"></i></button>` : ''}
-                        ${status !== 'rejected' ? `<button class="btn btn-outline btn-quick-reject" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;" title="Reject"><i class="fas fa-times"></i></button>` : ''}
-                        <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.3rem;">
-                            Review
-                        </button>
-                        <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Submission"><i class="fas fa-trash-alt"></i></button>
+                        <div class="table-actions-group">
+                            <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                            ${status !== 'approved' ? `<button class="btn btn-outline btn-quick-approve" data-id="${sub.id}" style="color:var(--success); border-color:var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Approve"><i class="fas fa-check"></i></button>` : ''}
+                            ${status !== 'rejected' ? `<button class="btn btn-outline btn-quick-reject" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Reject"><i class="fas fa-times"></i></button>` : ''}
+                            <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Review</button>
+                            <button class="btn btn-outline btn-delete-row" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Delete Submission"><i class="fas fa-trash-alt"></i></button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2934,7 +3347,7 @@
             const courseCode = docData.courseCode || 'Course';
             const courseName = docData.courseName || getCourseTitle(courseCode) || '';
             const examType = docData.examType || docData.type || 'Material';
-            const semLabel = docData.semester ? decodeSemester(docData.semester).label : '';
+            const semLabel = docData.semester ? decodeSemester(docData.semester) : '';
             const submitterName = docData.submitterName || 'Student';
 
             let subject = '';
