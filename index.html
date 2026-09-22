@@ -186,11 +186,15 @@
         .btn-primary {
             background-color: var(--primary);
             color: white;
-            width: 100%;
         }
         
         .btn-primary:hover {
             background-color: var(--primary-hover);
+        }
+
+        .auth-card .btn,
+        .auth-form .btn {
+            width: 100%;
         }
         
         .btn-success { background: var(--success); color: white; }
@@ -354,6 +358,7 @@
             align-items: center;
             gap: 0.75rem;
             flex-wrap: nowrap;
+            flex-shrink: 0;
         }
 
         .header-action-btn {
@@ -364,6 +369,8 @@
             font-size: 0.8rem;
             white-space: nowrap;
             flex-shrink: 0;
+            width: auto !important;
+            max-width: max-content;
             border-radius: var(--radius);
         }
 
@@ -1017,6 +1024,8 @@
             .header-action-btn {
                 padding: 0.45rem 0.6rem !important;
                 font-size: 0.85rem !important;
+                width: auto !important;
+                max-width: max-content !important;
             }
             .search-bar {
                 width: 130px;
