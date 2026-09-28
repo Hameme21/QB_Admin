@@ -2186,8 +2186,26 @@
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:0.6rem 0.85rem; margin-bottom:0.75rem; flex-wrap:wrap; width:100%; max-width:100%; box-sizing:border-box;">
                         <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
                             <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fas fa-sliders-h"></i> Batch Override:</span>
-                            <select id="batch-sem-select" class="filter-select" style="padding:0.3rem 0.6rem; font-size:0.8rem;"></select>
-                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.75rem;" id="btn-batch-apply-sem">Apply Semester to All</button>
+                            <!-- Course Code Batch Override -->
+                            <select id="batch-course-select" class="filter-select" style="padding:0.3rem 0.6rem; font-size:0.8rem; max-width:210px;">
+                                <option value="">-- Select Course --</option>
+                            </select>
+                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.75rem;" id="btn-batch-apply-course">Apply Course Code to All</button>
+
+                            <!-- Exam Type Batch Override -->
+                            <select id="batch-exam-select" class="filter-select" style="padding:0.3rem 0.6rem; font-size:0.8rem;">
+                                <option value="Midterm">Midterm</option>
+                                <option value="Final">Final</option>
+                                <option value="Quiz 1">Quiz 1</option>
+                                <option value="Quiz 2">Quiz 2</option>
+                                <option value="Quiz 3">Quiz 3</option>
+                                <option value="Quiz 4">Quiz 4</option>
+                                <option value="Quiz">Quiz</option>
+                                <option value="Assignment">Assignment</option>
+                                <option value="Lab">Lab</option>
+                                <option value="Notes">Notes</option>
+                            </select>
+                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.75rem;" id="btn-batch-apply-exam">Apply Exam Type to All</button>
                         </div>
                         <div style="display:flex; align-items:center; gap:0.5rem;">
                             <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted);"><i class="fas fa-filter"></i> Filter Queue:</span>
@@ -4023,8 +4041,10 @@
         const btnZipReset = document.getElementById('btn-zip-reset');
         const btnStartZipUpload = document.getElementById('btn-start-zip-upload');
         const zipSelectedCount = document.getElementById('zip-selected-count');
-        const batchSemSelect = document.getElementById('batch-sem-select');
-        const btnBatchApplySem = document.getElementById('btn-batch-apply-sem');
+        const batchCourseSelect = document.getElementById('batch-course-select');
+        const btnBatchApplyCourse = document.getElementById('btn-batch-apply-course');
+        const batchExamSelect = document.getElementById('batch-exam-select');
+        const btnBatchApplyExam = document.getElementById('btn-batch-apply-exam');
         const zipUploadProgressArea = document.getElementById('zip-upload-progress-area');
         const zipProgressLabel = document.getElementById('zip-progress-label');
         const zipProgressPercent = document.getElementById('zip-progress-percent');
@@ -4126,20 +4146,21 @@
             });
         }
 
-        function populateBatchSemesterDropdown() {
-            if (batchSemSelect && batchSemSelect.options.length === 0) {
-                ADMIN_SEMESTERS.forEach(sem => {
+        function populateBatchCourseDropdown() {
+            if (batchCourseSelect && batchCourseSelect.options.length <= 1) {
+                batchCourseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+                CURRICULUM.forEach(c => {
                     const opt = document.createElement('option');
-                    opt.value = sem.code;
-                    opt.textContent = sem.label;
-                    batchSemSelect.appendChild(opt);
+                    opt.value = c.code;
+                    opt.textContent = `${c.code} - ${c.title}`;
+                    batchCourseSelect.appendChild(opt);
                 });
             }
         }
 
         const openAdminZipModal = () => {
             if (adminZipUploadModal) {
-                populateBatchSemesterDropdown();
+                populateBatchCourseDropdown();
                 resetZipUploader();
                 adminZipUploadModal.classList.add('active');
                 document.body.style.overflow = 'hidden';
@@ -4687,17 +4708,52 @@
             });
         }
 
-        // Batch Apply Semester Override
-        if (btnBatchApplySem && batchSemSelect) {
-            btnBatchApplySem.addEventListener('click', () => {
-                const targetSem = batchSemSelect.value;
-                if (!targetSem) return;
+        // Batch Apply Course Code Override
+        if (btnBatchApplyCourse && batchCourseSelect) {
+            btnBatchApplyCourse.addEventListener('click', () => {
+                const targetCourse = batchCourseSelect.value;
+                if (!targetCourse) {
+                    showToast('Please select a course to apply.', 'warning');
+                    return;
+                }
+                const cObj = CURRICULUM.find(c => c.code === targetCourse);
+                const title = cObj ? cObj.title : getCourseTitle(targetCourse);
+                const trimester = cObj && cObj.trimester ? cObj.trimester : 0;
+
                 parsedZipEntries.forEach(item => {
-                    item.semester = targetSem;
-                    item.topic = `${item.examType} Question ${decodeSemester(targetSem)}`.trim();
+                    item.courseCode = targetCourse;
+                    item.courseName = title;
+                    if (trimester) item.trimester = trimester;
                 });
-                renderZipParsedTable();
-                showToast(`Applied semester ${decodeSemester(targetSem)} to all questions.`, 'success');
+                refreshZipUploadedStatus({ render: true });
+                showToast(`Applied course ${targetCourse} to all questions.`, 'success');
+            });
+        }
+
+        // Batch Apply Exam Type Override
+        if (btnBatchApplyExam && batchExamSelect) {
+            btnBatchApplyExam.addEventListener('click', () => {
+                const targetExam = batchExamSelect.value;
+                if (!targetExam) return;
+                parsedZipEntries.forEach(item => {
+                    item.examType = targetExam;
+                    if (targetExam === 'Lab') {
+                        item.materialType = 'Lab';
+                    } else if (targetExam === 'Notes') {
+                        item.materialType = 'Notes';
+                    } else {
+                        item.materialType = 'Question';
+                    }
+                    if (item.materialType === 'Question') {
+                        item.topic = `${targetExam} Question ${item.semester ? decodeSemester(item.semester) : ''}`.trim();
+                    } else if (item.materialType === 'Lab') {
+                        item.topic = `Lab Material ${item.semester ? decodeSemester(item.semester) : ''}`.trim();
+                    } else {
+                        item.topic = `Lecture Notes ${item.courseCode || ''}`.trim();
+                    }
+                });
+                refreshZipUploadedStatus({ render: true });
+                showToast(`Applied exam type "${targetExam}" to all questions.`, 'success');
             });
         }
 
