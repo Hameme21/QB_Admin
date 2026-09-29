@@ -2182,6 +2182,9 @@
                                 <i class="fas fa-sync-alt"></i> Check Uploaded Status
                             </button>
                             <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem;" id="btn-zip-select-all"><i class="fas fa-check-square"></i> Select All</button>
+                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem; color:var(--danger); border-color:var(--danger);" id="btn-remove-selected-queue" title="Remove selected files from queue">
+                                <i class="fas fa-trash-alt"></i> Remove Selected
+                            </button>
                             <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem;" id="btn-zip-reset"><i class="fas fa-redo"></i> Reset Queue</button>
                         </div>
                     </div>
@@ -4047,6 +4050,7 @@
         const zipTableTbody = document.getElementById('zip-table-tbody');
         const zipThCheckbox = document.getElementById('zip-th-checkbox');
         const btnZipSelectAll = document.getElementById('btn-zip-select-all');
+        const btnRemoveSelectedQueue = document.getElementById('btn-remove-selected-queue');
         const btnZipReset = document.getElementById('btn-zip-reset');
         const btnStartZipUpload = document.getElementById('btn-start-zip-upload');
         const btnAddAnotherZip = document.getElementById('btn-add-another-zip');
@@ -4150,6 +4154,26 @@
                 document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
                 refreshZipUploadedStatus();
                 showToast(`Removed ${duplicateCount} already-uploaded file${duplicateCount === 1 ? '' : 's'} from the queue.`, 'success');
+            });
+        }
+
+        if (btnRemoveSelectedQueue) {
+            btnRemoveSelectedQueue.addEventListener('click', () => {
+                const selectedItems = parsedZipEntries.filter(item => item.selected);
+                if (selectedItems.length === 0) {
+                    showToast('Please select the questions you want to remove from the queue.', 'warning');
+                    return;
+                }
+                const count = selectedItems.length;
+                parsedZipEntries = parsedZipEntries.filter(item => !item.selected);
+                document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
+                document.getElementById('zip-stat-solutions').textContent = parsedZipEntries.filter(i => i.pairedSolution).length;
+                refreshZipUploadedStatus({ render: true });
+                updateZipSelectedCount();
+                showToast(`Removed ${count} question${count === 1 ? '' : 's'} from the queue.`, 'info');
+                if (parsedZipEntries.length === 0) {
+                    resetZipUploader();
+                }
             });
         }
 
@@ -4608,9 +4632,17 @@
             if (!zipTableTbody) return;
             zipTableTbody.innerHTML = '';
 
+            if (parsedZipEntries.length === 0) {
+                zipTableTbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:2.5rem;"><i class="fas fa-check-circle" style="color:var(--success); font-size:1.5rem; display:block; margin-bottom:0.5rem;"></i> No questions in queue.</td></tr>';
+                updateZipSelectedCount();
+                return;
+            }
+
+            let visibleCount = 0;
             parsedZipEntries.forEach((item, index) => {
                 if (zipFilterStatus === 'new' && item.isDuplicate) return;
                 if (zipFilterStatus === 'duplicate' && !item.isDuplicate) return;
+                visibleCount++;
                 const tr = document.createElement('tr');
                 tr.dataset.index = index;
 
@@ -4696,6 +4728,10 @@
                 zipTableTbody.appendChild(tr);
             });
 
+            if (visibleCount === 0 && parsedZipEntries.length > 0) {
+                zipTableTbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:2rem;">No questions match filter criteria.</td></tr>';
+            }
+
             attachZipRowListeners();
             updateZipSelectedCount();
         }
@@ -4774,7 +4810,12 @@
         window.removeZipRow = function(index) {
             parsedZipEntries.splice(index, 1);
             document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
-            renderZipParsedTable();
+            document.getElementById('zip-stat-solutions').textContent = parsedZipEntries.filter(i => i.pairedSolution).length;
+            refreshZipUploadedStatus({ render: true });
+            updateZipSelectedCount();
+            if (parsedZipEntries.length === 0) {
+                resetZipUploader();
+            }
         };
 
         function updateZipSelectedCount() {
@@ -4995,7 +5036,12 @@
                 isUploadingZip = false;
                 if (btnZipReset) btnZipReset.disabled = false;
 
-                // Refresh table checkboxes & status so published items are marked and unchecked
+                // Remove successfully published files from queue so they no longer linger in queue table
+                parsedZipEntries = parsedZipEntries.filter(item => !item.isUploaded);
+                document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
+                document.getElementById('zip-stat-solutions').textContent = parsedZipEntries.filter(i => i.pairedSolution).length;
+
+                // Refresh table checkboxes & status so only remaining/failed items appear
                 refreshZipUploadedStatus({ render: true });
                 updateZipSelectedCount();
 
@@ -5004,7 +5050,7 @@
                 zipProgressFill.style.width = '100%';
                 zipProgressLabel.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success);"></i> Batch Upload Complete! (${successCount} published, ${failureCount} failed)`;
                 
-                zipConsoleLog.innerHTML += `<div style="color:#34d399; font-weight:bold; margin-top:0.4rem;">[DONE] Batch upload finished: ${successCount} successful, ${failureCount} errors.</div>`;
+                zipConsoleLog.innerHTML += `<div style="color:#34d399; font-weight:bold; margin-top:0.4rem;">[DONE] Batch upload finished: ${successCount} successful, ${failureCount} errors. Published files removed from queue.</div>`;
                 zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
 
                 // Audit Log
