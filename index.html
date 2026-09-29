@@ -2137,10 +2137,10 @@
                 <!-- Step 1: Drag & Drop ZIP File -->
                 <div id="zip-drop-section" style="width:100%; box-sizing:border-box;">
                     <div class="zip-drop-area" id="zipDropzone" onclick="document.getElementById('zipFileInput').click()">
-                        <input type="file" id="zipFileInput" accept=".zip" style="display:none;">
+                        <input type="file" id="zipFileInput" accept=".zip" multiple style="display:none;">
                         <i class="fas fa-file-archive" style="font-size:3rem; color:var(--warning); margin-bottom:0.75rem;"></i>
-                        <h3 style="margin-bottom:0.4rem; font-size:1.15rem; color:var(--text-main);">Drag & drop your question archive (.ZIP) here</h3>
-                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">Or click to browse a ZIP file from your computer</p>
+                        <h3 style="margin-bottom:0.4rem; font-size:1.15rem; color:var(--text-main);">Drag & drop question archive (.ZIP) file(s) here</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">Or click to browse ZIP files from your computer (Multiple files supported)</p>
                         <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
                             <span class="zip-pill-tag"><i class="fas fa-magic" style="color:var(--warning);"></i> Auto-Detects Course Code</span>
                             <span class="zip-pill-tag"><i class="fas fa-pen-alt" style="color:var(--warning);"></i> Auto-Detects Exam Name (Midterm/Final/Quiz)</span>
@@ -2171,6 +2171,10 @@
                             <span class="zip-stat-pill" style="color:var(--danger);" id="zip-duplicate-stat"><i class="fas fa-exclamation-circle"></i> <span id="zip-stat-duplicates">0</span> Already Uploaded</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <input type="file" id="zipAddMoreInput" accept=".zip" multiple style="display:none;">
+                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem; border-color:var(--warning); color:var(--warning); font-weight:600;" id="btn-add-more-zip-top" title="Add another ZIP archive to this queue">
+                                <i class="fas fa-plus"></i> Add Another ZIP
+                            </button>
                             <button type="button" class="btn btn-danger" id="btn-remove-duplicates" style="display:none; padding:0.3rem 0.75rem; font-size:0.8rem; background:var(--danger); color:white; border:none;" title="Remove all files that already exist in the Question Bank from the upload queue">
                                 <i class="fas fa-trash-alt"></i> Remove Already Uploaded (<span id="btn-dup-count">0</span>)
                             </button>
@@ -2178,7 +2182,7 @@
                                 <i class="fas fa-sync-alt"></i> Check Uploaded Status
                             </button>
                             <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem;" id="btn-zip-select-all"><i class="fas fa-check-square"></i> Select All</button>
-                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem;" id="btn-zip-reset"><i class="fas fa-redo"></i> Change ZIP</button>
+                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem;" id="btn-zip-reset"><i class="fas fa-redo"></i> Reset Queue</button>
                         </div>
                     </div>
 
@@ -2254,9 +2258,14 @@
                     <!-- Bottom Action Buttons -->
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:1rem; border-top:1px solid var(--border); flex-wrap:wrap; gap:0.5rem; width:100%; box-sizing:border-box;">
                         <button type="button" class="btn btn-outline" id="btn-cancel-zip-upload">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="btn-start-zip-upload" style="background:linear-gradient(135deg, var(--warning), #d97706); border:none; display:inline-flex; align-items:center; gap:0.5rem; font-weight:700;">
-                            <i class="fas fa-cloud-upload-alt"></i> Publish Selected (<span id="zip-selected-count">0</span>) Questions
-                        </button>
+                        <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                            <button type="button" class="btn btn-outline" id="btn-add-another-zip" style="padding:0.45rem 1rem; font-size:0.85rem; border-color:var(--warning); color:var(--warning); font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;">
+                                <i class="fas fa-file-archive"></i> Add Another ZIP File
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btn-start-zip-upload" style="background:linear-gradient(135deg, var(--warning), #d97706); border:none; display:inline-flex; align-items:center; gap:0.5rem; font-weight:700;">
+                                <i class="fas fa-cloud-upload-alt"></i> Publish Selected (<span id="zip-selected-count">0</span>) Questions
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -4040,6 +4049,9 @@
         const btnZipSelectAll = document.getElementById('btn-zip-select-all');
         const btnZipReset = document.getElementById('btn-zip-reset');
         const btnStartZipUpload = document.getElementById('btn-start-zip-upload');
+        const btnAddAnotherZip = document.getElementById('btn-add-another-zip');
+        const btnAddMoreZipTop = document.getElementById('btn-add-more-zip-top');
+        const zipAddMoreInput = document.getElementById('zipAddMoreInput');
         const zipSelectedCount = document.getElementById('zip-selected-count');
         const batchCourseSelect = document.getElementById('batch-course-select');
         const btnBatchApplyCourse = document.getElementById('btn-batch-apply-course');
@@ -4053,6 +4065,8 @@
 
         let currentZipInstance = null;
         let parsedZipEntries = []; // Array of parsed question objects
+        let parsedZipSolutions = []; // Array of parsed solution objects
+        let isUploadingZip = false;
         let zipFilterStatus = 'all'; // Track current filter: 'all', 'new', 'duplicate'
 
         const btnCheckDuplicates = document.getElementById('btn-check-duplicates');
@@ -4182,21 +4196,21 @@
         function resetZipUploader() {
             currentZipInstance = null;
             parsedZipEntries = [];
+            parsedZipSolutions = [];
+            isUploadingZip = false;
             if (zipFileInput) zipFileInput.value = '';
+            if (zipAddMoreInput) zipAddMoreInput.value = '';
             if (zipDropSection) zipDropSection.style.display = 'block';
             if (zipReviewSection) zipReviewSection.style.display = 'none';
             if (zipUploadProgressArea) zipUploadProgressArea.style.display = 'none';
             if (zipTableTbody) zipTableTbody.innerHTML = '';
             if (zipConsoleLog) zipConsoleLog.innerHTML = '';
-            if (btnStartZipUpload) {
-                btnStartZipUpload.disabled = false;
-                btnStartZipUpload.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Publish Selected (<span id="zip-selected-count">0</span>) Questions';
-            }
+            updateZipActionButtons();
         }
 
         if (btnZipReset) btnZipReset.addEventListener('click', resetZipUploader);
 
-        // Drag & Drop events for ZIP
+        // Drag & Drop events for initial ZIP dropzone
         if (zipDropzone) {
             ['dragenter', 'dragover'].forEach(eventName => {
                 zipDropzone.addEventListener(eventName, (e) => {
@@ -4215,7 +4229,7 @@
             zipDropzone.addEventListener('drop', (e) => {
                 const dt = e.dataTransfer;
                 if (dt && dt.files && dt.files.length > 0) {
-                    handleZipFileSelection(dt.files[0]);
+                    handleZipFileSelection(dt.files);
                 }
             });
         }
@@ -4223,7 +4237,54 @@
         if (zipFileInput) {
             zipFileInput.addEventListener('change', () => {
                 if (zipFileInput.files && zipFileInput.files.length > 0) {
-                    handleZipFileSelection(zipFileInput.files[0]);
+                    handleZipFileSelection(zipFileInput.files);
+                    zipFileInput.value = '';
+                }
+            });
+        }
+
+        // Add Another ZIP File buttons and input handlers
+        if (btnAddAnotherZip && zipAddMoreInput) {
+            btnAddAnotherZip.addEventListener('click', () => {
+                zipAddMoreInput.click();
+            });
+        }
+
+        if (btnAddMoreZipTop && zipAddMoreInput) {
+            btnAddMoreZipTop.addEventListener('click', () => {
+                zipAddMoreInput.click();
+            });
+        }
+
+        if (zipAddMoreInput) {
+            zipAddMoreInput.addEventListener('change', () => {
+                if (zipAddMoreInput.files && zipAddMoreInput.files.length > 0) {
+                    handleZipFileSelection(zipAddMoreInput.files);
+                    zipAddMoreInput.value = '';
+                }
+            });
+        }
+
+        // Allow drag & drop on the review table section as well
+        if (zipReviewSection) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                zipReviewSection.addEventListener(eventName, (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    zipReviewSection.style.outline = '2px dashed var(--warning)';
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                zipReviewSection.addEventListener(eventName, (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    zipReviewSection.style.outline = 'none';
+                });
+            });
+
+            zipReviewSection.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    handleZipFileSelection(dt.files);
                 }
             });
         }
@@ -4399,9 +4460,16 @@
             };
         }
 
-        async function handleZipFileSelection(file) {
-            if (!file || !file.name.toLowerCase().endsWith('.zip')) {
-                showToast('Please select a valid .ZIP archive file.', 'error');
+        async function handleZipFileSelection(inputFiles) {
+            if (!inputFiles) return;
+            const fileList = Array.isArray(inputFiles)
+                ? inputFiles
+                : (inputFiles instanceof FileList ? Array.from(inputFiles) : [inputFiles]);
+
+            const zipFiles = fileList.filter(f => f && f.name && f.name.toLowerCase().endsWith('.zip'));
+
+            if (zipFiles.length === 0) {
+                showToast('Please select valid .ZIP archive file(s).', 'error');
                 return;
             }
 
@@ -4410,105 +4478,129 @@
                 return;
             }
 
-            showToast('Extracting and analyzing ZIP contents...', 'info');
+            showToast(`Extracting ${zipFiles.length} ZIP archive${zipFiles.length > 1 ? 's' : ''}...`, 'info');
 
             try {
-                const zip = new JSZip();
-                currentZipInstance = await zip.loadAsync(file);
-
                 const validExtensions = ['.pdf', '.png', '.jpg', '.jpeg'];
-                const rawFileList = [];
-                const solutionList = [];
+                const newRawFileList = [];
+                const newSolutionList = [];
 
-                // Filter valid files and ignore OS metadata
-                for (const [relativePath, zipEntry] of Object.entries(currentZipInstance.files)) {
-                    if (zipEntry.dir) continue;
-                    if (relativePath.includes('__MACOSX') || relativePath.includes('.DS_Store') || relativePath.includes('Thumbs.db')) continue;
+                for (let fIdx = 0; fIdx < zipFiles.length; fIdx++) {
+                    const file = zipFiles[fIdx];
+                    try {
+                        const zip = new JSZip();
+                        const zipInstance = await zip.loadAsync(file);
 
-                    const ext = relativePath.slice(relativePath.lastIndexOf('.')).toLowerCase();
-                    if (!validExtensions.includes(ext)) continue;
+                        for (const [relativePath, zipEntry] of Object.entries(zipInstance.files)) {
+                            if (zipEntry.dir) continue;
+                            if (relativePath.includes('__MACOSX') || relativePath.includes('.DS_Store') || relativePath.includes('Thumbs.db')) continue;
 
-                    const fileName = relativePath.split('/').pop();
-                    const parsed = parseQuestionMetadata(relativePath, fileName);
-                    parsed.zipEntry = zipEntry;
+                            const ext = relativePath.slice(relativePath.lastIndexOf('.')).toLowerCase();
+                            if (!validExtensions.includes(ext)) continue;
 
-                    if (parsed.isSolution) {
-                        solutionList.push(parsed);
-                    } else {
-                        rawFileList.push(parsed);
+                            const fileName = relativePath.split('/').pop();
+                            const parsed = parseQuestionMetadata(relativePath, fileName);
+                            parsed.zipEntry = zipEntry;
+                            parsed.sourceZipName = file.name;
+
+                            if (parsed.isSolution) {
+                                newSolutionList.push(parsed);
+                            } else {
+                                newRawFileList.push(parsed);
+                            }
+                        }
+                    } catch (zipErr) {
+                        console.error(`Error loading ZIP ${file.name}:`, zipErr);
+                        showToast(`Could not read ${file.name}: ${zipErr.message}`, 'error');
                     }
                 }
 
-                if (rawFileList.length === 0 && solutionList.length === 0) {
-                    showToast('No PDF or Image question files found inside this ZIP archive.', 'warning');
+                if (newRawFileList.length === 0 && newSolutionList.length === 0) {
+                    showToast('No PDF or Image question files found inside the selected ZIP file(s).', 'warning');
                     return;
                 }
 
-                // If only solutions were found, treat them as items
-                if (rawFileList.length === 0 && solutionList.length > 0) {
-                    solutionList.forEach(s => { s.isSolution = false; rawFileList.push(s); });
+                // If only solutions were found in these ZIPs, try to pair or treat as questions
+                if (newRawFileList.length === 0 && newSolutionList.length > 0) {
+                    newSolutionList.forEach(s => {
+                        const sBase = s.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const matchingQ = parsedZipEntries.find(q => {
+                            if (q.pairedSolution) return false;
+                            const qBase = q.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
+                            return sBase.includes(qBase) || (s.courseCode && s.courseCode === q.courseCode && s.examType === q.examType && s.semester === q.semester);
+                        });
+                        if (matchingQ) {
+                            matchingQ.pairedSolution = s;
+                        } else {
+                            s.isSolution = false;
+                            newRawFileList.push(s);
+                        }
+                    });
                 }
 
-                // Solution Pairing Engine: pair solution files to matching question items
-                let pairedSolutionsCount = 0;
-                rawFileList.forEach(qItem => {
+                // Collect solutions across all ZIPs
+                parsedZipSolutions.push(...newSolutionList);
+
+                // Solution Pairing Engine: pair new questions with all available solutions
+                newRawFileList.forEach(qItem => {
                     qItem.pairedSolution = null;
                     const qBase = qItem.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                    
-                    const matchedSol = solutionList.find(sol => {
+
+                    const matchedSol = parsedZipSolutions.find(sol => {
                         const solBase = sol.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                        // Check if sol filename contains question base or has same course + exam + sem
                         return (solBase.includes(qBase) || (sol.courseCode && sol.courseCode === qItem.courseCode && sol.examType === qItem.examType && sol.semester === qItem.semester));
                     });
 
                     if (matchedSol) {
                         qItem.pairedSolution = matchedSol;
-                        pairedSolutionsCount++;
                     }
                 });
+
+                // Also check if any existing questions in queue can now be paired with newly added solutions
+                if (parsedZipEntries.length > 0 && newSolutionList.length > 0) {
+                    parsedZipEntries.forEach(qItem => {
+                        if (qItem.pairedSolution) return;
+                        const qBase = qItem.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const matchedSol = newSolutionList.find(sol => {
+                            const solBase = sol.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
+                            return (solBase.includes(qBase) || (sol.courseCode && sol.courseCode === qItem.courseCode && sol.examType === qItem.examType && sol.semester === qItem.semester));
+                        });
+                        if (matchedSol) {
+                            qItem.pairedSolution = matchedSol;
+                        }
+                    });
+                }
 
                 // Duplicate Checking against allSubmissions in DB
-                let duplicateCount = 0;
-                rawFileList.forEach((qItem, idx) => {
-                    qItem.id = `zip_item_${idx}`;
+                const startIndex = parsedZipEntries.length;
+                newRawFileList.forEach((qItem, idx) => {
+                    qItem.id = `zip_item_${startIndex + idx}_${Date.now()}`;
                     qItem.selected = true;
+                    qItem.isUploaded = false;
 
-                    const isDup = allSubmissions.some(p => {
-                        if (!qItem.courseCode) return false;
-                        const pCourse = (p.courseCode || '').replace(/\s+/g, '').toUpperCase();
-                        const qCourse = qItem.courseCode.replace(/\s+/g, '').toUpperCase();
-                        const pExam = (p.examType || '').toLowerCase();
-                        const qExam = (qItem.examType || '').toLowerCase();
-                        const pSem = String(p.semester || '');
-                        const qSem = String(qItem.semester || '');
-
-                        if (qExam === 'midterm' || qExam === 'final') {
-                            return pCourse === qCourse && pExam === qExam && pSem === qSem && isDocApproved(p);
-                        }
-                        return false;
-                    });
-
+                    const isDup = isQueuedFileAlreadyUploaded(qItem);
                     qItem.isDuplicate = isDup;
                     if (isDup) {
-                        duplicateCount++;
-                        qItem.selected = false; // Uncheck duplicates by default to prevent accidental overwrite
+                        qItem.selected = false;
                     }
                 });
 
-                parsedZipEntries = rawFileList;
+                // Append new questions to existing queue
+                parsedZipEntries.push(...newRawFileList);
 
                 // Update UI counters
                 document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
-                document.getElementById('zip-stat-solutions').textContent = pairedSolutionsCount;
-                refreshZipUploadedStatus();
+                document.getElementById('zip-stat-solutions').textContent = parsedZipEntries.filter(i => i.pairedSolution).length;
+                refreshZipUploadedStatus({ render: true });
+                updateZipSelectedCount();
 
                 zipDropSection.style.display = 'none';
                 zipReviewSection.style.display = 'flex';
-                showToast(`ZIP extracted: ${parsedZipEntries.length} questions ready for review!`, 'success');
+                showToast(`Loaded ${newRawFileList.length} questions from ${zipFiles.length} ZIP file(s)! Total in queue: ${parsedZipEntries.length}`, 'success');
 
             } catch (err) {
-                console.error('Error parsing ZIP file:', err);
-                showToast('Error reading ZIP file: ' + err.message, 'error');
+                console.error('Error parsing ZIP file(s):', err);
+                showToast('Error reading ZIP file(s): ' + err.message, 'error');
             }
         }
 
@@ -4545,7 +4637,9 @@
 
                 // Status Badge
                 let statusBadge = `<span class="badge badge-approved" style="font-size:0.7rem;"><i class="fas fa-check-circle"></i> Ready</span>`;
-                if (!hasCourse) {
+                if (item.isUploaded) {
+                    statusBadge = `<span class="badge badge-approved" style="font-size:0.7rem; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid #10b981;"><i class="fas fa-check-double"></i> Published</span>`;
+                } else if (!hasCourse) {
                     statusBadge = `<span class="badge badge-rejected" style="font-size:0.7rem;"><i class="fas fa-exclamation-circle"></i> Select Course</span>`;
                 } else if (item.isDuplicate) {
                     statusBadge = `<span class="badge badge-pending" style="font-size:0.7rem;" title="A verified question for this course/exam/sem already exists"><i class="fas fa-exclamation-triangle"></i> Exists in DB</span>`;
@@ -4558,13 +4652,13 @@
 
                 tr.innerHTML = `
                     <td style="text-align:center;">
-                        <input type="checkbox" class="zip-item-checkbox" data-index="${index}" ${item.selected ? 'checked' : ''}>
+                        <input type="checkbox" class="zip-item-checkbox" data-index="${index}" ${item.selected ? 'checked' : ''} ${item.isUploaded ? 'disabled' : ''}>
                     </td>
                     <td style="max-width:200px;">
                         <div style="font-weight:600; font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main);" title="${item.filePath}">
                             <i class="fas fa-file-pdf" style="color:var(--danger); margin-right:0.3rem;"></i> ${item.originalFilename}
                         </div>
-                        <div style="font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.filePath}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.sourceZipName ? `<span style="color:var(--warning); font-weight:600;">[${item.sourceZipName}]</span> ` : ''}${item.filePath}</div>
                     </td>
                     <td>
                         <select class="zip-row-course" data-index="${index}">
@@ -4684,24 +4778,52 @@
         };
 
         function updateZipSelectedCount() {
-            const count = parsedZipEntries.filter(i => i.selected).length;
-            if (zipSelectedCount) zipSelectedCount.textContent = count;
+            const unuploadedSelected = parsedZipEntries.filter(i => i.selected && !i.isUploaded).length;
+            if (zipSelectedCount) zipSelectedCount.textContent = unuploadedSelected;
             const btnSpan = document.getElementById('zip-selected-count');
-            if (btnSpan) btnSpan.textContent = count;
+            if (btnSpan) btnSpan.textContent = unuploadedSelected;
+            updateZipActionButtons();
+        }
+
+        function updateZipActionButtons() {
+            const unuploadedSelected = parsedZipEntries.filter(i => i.selected && !i.isUploaded).length;
+
+            if (btnAddAnotherZip) {
+                btnAddAnotherZip.style.display = 'inline-flex';
+            }
+
+            if (!btnStartZipUpload) return;
+
+            if (isUploadingZip) {
+                // While uploading the PDFs: hide the publish button completely per user instruction
+                btnStartZipUpload.style.display = 'none';
+            } else {
+                if (unuploadedSelected > 0) {
+                    btnStartZipUpload.style.display = 'inline-flex';
+                    btnStartZipUpload.disabled = false;
+                    btnStartZipUpload.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Publish Selected (<span id="zip-selected-count">${unuploadedSelected}</span>) Questions`;
+                } else {
+                    // No batch file complete button per user instruction; hide publish button when complete so only Add Another ZIP is shown
+                    btnStartZipUpload.style.display = 'none';
+                }
+            }
         }
 
         if (zipThCheckbox) {
             zipThCheckbox.addEventListener('change', (e) => {
                 const checked = e.target.checked;
-                parsedZipEntries.forEach(item => item.selected = checked);
+                parsedZipEntries.forEach(item => {
+                    if (!item.isUploaded) item.selected = checked;
+                });
                 renderZipParsedTable();
             });
         }
 
         if (btnZipSelectAll) {
             btnZipSelectAll.addEventListener('click', () => {
-                const allSelected = parsedZipEntries.every(i => i.selected);
-                parsedZipEntries.forEach(item => item.selected = !allSelected);
+                const unuploaded = parsedZipEntries.filter(i => !i.isUploaded);
+                const allSelected = unuploaded.length > 0 && unuploaded.every(i => i.selected);
+                unuploaded.forEach(item => item.selected = !allSelected);
                 if (zipThCheckbox) zipThCheckbox.checked = !allSelected;
                 btnZipSelectAll.innerHTML = !allSelected ? '<i class="fas fa-times-square"></i> Deselect All' : '<i class="fas fa-check-square"></i> Select All';
                 renderZipParsedTable();
@@ -4760,7 +4882,7 @@
         // Batch Upload Execution
         if (btnStartZipUpload) {
             btnStartZipUpload.addEventListener('click', async () => {
-                const selectedItems = parsedZipEntries.filter(i => i.selected);
+                const selectedItems = parsedZipEntries.filter(i => i.selected && !i.isUploaded);
 
                 if (selectedItems.length === 0) {
                     showToast('Please select at least one question to upload.', 'warning');
@@ -4778,7 +4900,8 @@
                     return;
                 }
 
-                btnStartZipUpload.disabled = true;
+                isUploadingZip = true;
+                updateZipActionButtons(); // While uploading: hides publish button, displays Add Another ZIP button per user request
                 if (btnZipReset) btnZipReset.disabled = true;
                 zipUploadProgressArea.style.display = 'block';
                 zipConsoleLog.innerHTML = `<div style="color:#60a5fa;">[START] Starting batch upload of ${selectedItems.length} questions...</div>`;
@@ -4856,6 +4979,7 @@
                         successCount++;
                         item.selected = false;
                         item.isDuplicate = true;
+                        item.isUploaded = true;
                         zipConsoleLog.innerHTML += `<div style="color:#10b981;">✔ Successfully published: ${item.courseCode} - ${item.examType} (${item.semester}) [ID: ${newDocRef.id}]</div>`;
                         zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
 
@@ -4866,6 +4990,10 @@
                         zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
                     }
                 }
+
+                // Batch upload finished
+                isUploadingZip = false;
+                if (btnZipReset) btnZipReset.disabled = false;
 
                 // Refresh table checkboxes & status so published items are marked and unchecked
                 refreshZipUploadedStatus({ render: true });
@@ -4895,13 +5023,7 @@
                 }
 
                 showToast(`Batch Upload Complete: ${successCount} questions published directly!`, successCount > 0 ? 'success' : 'error');
-                btnStartZipUpload.disabled = false;
-                if (btnZipReset) btnZipReset.disabled = false;
-                if (failureCount > 0) {
-                    btnStartZipUpload.innerHTML = `<i class="fas fa-redo"></i> Retry Failed (${failureCount}) Questions`;
-                } else {
-                    btnStartZipUpload.innerHTML = '<i class="fas fa-check-double"></i> Batch Upload Finished';
-                }
+                updateZipActionButtons();
 
                 // Re-render dashboard tables
                 fetchSubmissions();
