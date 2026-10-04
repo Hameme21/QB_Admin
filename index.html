@@ -2053,6 +2053,7 @@
                             <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Material Type *</label>
                             <select id="adminUpType" class="input-control" required>
                                 <option value="Question">Question Paper</option>
+                                <option value="Solution">Solution</option>
                                 <option value="Lab">Lab Material</option>
                                 <option value="Notes">Lecture Notes</option>
                             </select>
@@ -2081,13 +2082,18 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom:0.75rem;">
-                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Topic / Title</label>
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" id="adminTopicLabel">Topic / Title</label>
                         <input type="text" id="adminUpTopic" class="input-control" placeholder="e.g. Chapter 3 Summary, Midterm Exam 2025">
+                    </div>
+
+                    <div class="form-group" id="adminFacultyGroup" style="margin-bottom:0.75rem;">
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" id="adminFacultyLabel">Faculty Name / Initial <span style="color:var(--text-muted); font-weight:normal;">(Recommended for Lab / Notes)</span></label>
+                        <input type="text" id="adminUpFaculty" class="input-control" placeholder="e.g. Dr. John Doe / AKM">
                     </div>
 
                     <!-- File Dropzone 1: Main File -->
                     <div class="form-group" style="margin-bottom:0.75rem;">
-                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Main File (PDF/Image) *</label>
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" id="adminMainFileLabel">Main File (PDF/Image) *</label>
                         <div class="file-drop-area" id="adminMainDropzone" onclick="document.getElementById('adminUpMainFile').click()" style="padding:1rem;">
                             <input type="file" id="adminUpMainFile" accept=".pdf,.png,.jpg,.jpeg" required style="display:none;">
                             <div id="adminMainDropContent">
@@ -3920,6 +3926,51 @@
         bindAdminDropzone('adminMainDropzone', 'adminUpMainFile', 'adminMainDropContent');
         bindAdminDropzone('adminSolDropzone', 'adminUpSolFile', 'adminSolDropContent');
 
+        const adminUpTypeSelect = document.getElementById('adminUpType');
+        if (adminUpTypeSelect) {
+            adminUpTypeSelect.addEventListener('change', () => {
+                const val = adminUpTypeSelect.value;
+                const examGrp = document.getElementById('adminExamGroup');
+                const solGrp = document.getElementById('adminSolGroup');
+                const topicLbl = document.getElementById('adminTopicLabel');
+                const mainLbl = document.getElementById('adminMainFileLabel');
+                const topicInp = document.getElementById('adminUpTopic');
+                const facultyLbl = document.getElementById('adminFacultyLabel');
+
+                if (examGrp) examGrp.style.display = (val === 'Question' || val === 'Solution') ? 'block' : 'none';
+                if (solGrp) solGrp.style.display = val === 'Question' ? 'block' : 'none';
+                
+                if (mainLbl) {
+                    if (val === 'Solution') {
+                        mainLbl.textContent = 'Solution File (PDF/Image) *';
+                    } else if (val === 'Notes') {
+                        mainLbl.textContent = 'Notes File (PDF/Image) *';
+                    } else {
+                        mainLbl.textContent = 'Main File (PDF/Image) *';
+                    }
+                }
+
+                if (topicLbl && topicInp) {
+                    if (val === 'Notes') {
+                        topicLbl.innerHTML = 'Topic / Title <span style="color:var(--danger); font-weight:700;">* (Required for Notes)</span>';
+                        topicInp.placeholder = 'e.g. Chapter 3 Summary, Lecture Notes Week 5';
+                    } else if (val === 'Solution') {
+                        topicLbl.innerHTML = 'Topic / Title <span style="color:var(--text-muted); font-weight:normal;">(e.g. Midterm Spring 2024 Solution)</span>';
+                        topicInp.placeholder = 'e.g. Midterm Spring 2024 Solution';
+                    } else {
+                        topicLbl.innerHTML = 'Topic / Title';
+                        topicInp.placeholder = 'e.g. Chapter 3 Summary, Midterm Exam 2025';
+                    }
+                }
+
+                if (facultyLbl) {
+                    facultyLbl.innerHTML = (val === 'Lab' || val === 'Notes') 
+                        ? 'Faculty Name / Initial <span style="color:var(--warning); font-weight:600;">(Recommended for Lab / Notes)</span>'
+                        : 'Faculty Name / Initial <span style="color:var(--text-muted); font-weight:normal;">(Optional)</span>';
+                }
+            });
+        }
+
         const adminUploadForm = document.getElementById('adminDirectUploadForm');
         if (adminUploadForm) {
             adminUploadForm.addEventListener('submit', async (e) => {
@@ -3939,11 +3990,16 @@
                     const materialType = document.getElementById('adminUpType').value;
                     const semester = document.getElementById('adminUpSemester').value;
                     const trimester = parseInt(document.getElementById('adminUpTrimester').value, 10);
-                    const examType = materialType === 'Question' ? document.getElementById('adminUpExamType').value : (materialType === 'Lab' ? 'Lab' : 'Notes');
+                    const examType = (materialType === 'Question' || materialType === 'Solution') ? document.getElementById('adminUpExamType').value : (materialType === 'Lab' ? 'Lab' : 'Notes');
                     const topic = document.getElementById('adminUpTopic').value.trim();
+                    const facultyName = (document.getElementById('adminUpFaculty')?.value || '').trim();
+
+                    if (materialType === 'Notes' && !topic) {
+                        throw new Error('Please enter a Topic / Title for Lecture Notes.');
+                    }
 
                     const mainFile = document.getElementById('adminUpMainFile').files[0];
-                    const solFile = document.getElementById('adminUpSolFile').files[0];
+                    const solFile = document.getElementById('adminUpSolFile')?.files[0];
 
                     if (!mainFile) throw new Error('Please attach a main file.');
 
@@ -3970,7 +4026,8 @@
                     }
 
                     status.innerHTML = '<div style="font-size:0.8rem; color:var(--primary); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Uploading main file...</div>';
-                    const mainAsset = await uploadToCloudinary(materialType === 'Notes' ? 'note' : 'question', mainFile, courseCode, topic);
+                    const mainAssetType = materialType === 'Notes' ? 'note' : (materialType === 'Solution' ? 'solution' : 'question');
+                    const mainAsset = await uploadToCloudinary(mainAssetType, mainFile, courseCode, topic);
 
                     const materialAssets = [mainAsset];
 
@@ -3989,19 +4046,20 @@
                         semester,
                         trimester,
                         type: materialType,
-                        materialType,
+                        materialType: materialType === 'Solution' ? 'solution' : materialType,
                         examType,
-                        topic: topic || `${examType} ${courseCode}`,
+                        topic: topic || (materialType === 'Solution' ? `${examType} Solution ${courseCode}` : `${examType} ${courseCode}`),
+                        facultyName: facultyName || '',
                         materialAssets,
                         pdfUrl: mainAsset.pdfUrl,
-                        solutionPdfUrl: solFile ? materialAssets.find(a => a.assetType === 'solution')?.pdfUrl : null,
+                        solutionPdfUrl: materialType === 'Solution' ? mainAsset.pdfUrl : (solFile ? materialAssets.find(a => a.assetType === 'solution')?.pdfUrl : null),
                         status: 'approved',
                         approvedAt: serverTimestamp(),
                         approvedBy: 'Admin (Direct)',
                         submitterName: 'Admin Direct',
                         submitterEmail: currentUser?.email || 'hamimasir5@gmail.com',
-                        courseSearch: `${courseCode} ${course.title} ${topic}`.toLowerCase(),
-                        materialGroup: materialType === 'Notes' ? 'notes' : 'questions',
+                        courseSearch: `${courseCode} ${course.title} ${topic} ${facultyName}`.toLowerCase(),
+                        materialGroup: materialType === 'Notes' ? 'notes' : (materialType === 'Solution' ? 'solutions' : 'questions'),
                         submittedAt: serverTimestamp(),
                         createdAt: serverTimestamp()
                     });
@@ -4022,6 +4080,8 @@
                     showToast('Question uploaded and published directly!', 'success');
                     closeAdminUploadModal();
                     adminUploadForm.reset();
+                    const adminFacInp = document.getElementById('adminUpFaculty');
+                    if (adminFacInp) adminFacInp.value = '';
                     resetAdminDropzone('adminMainDropzone', 'adminUpMainFile', 'adminMainDropContent');
                     resetAdminDropzone('adminSolDropzone', 'adminUpSolFile', 'adminSolDropContent');
 
@@ -4663,7 +4723,7 @@
                 `).join('');
 
                 // Type options
-                const typeOpts = ['Question', 'Lab', 'Notes'].map(t => `
+                const typeOpts = ['Question', 'Solution', 'Lab', 'Notes'].map(t => `
                     <option value="${t}" ${t === item.materialType ? 'selected' : ''}>${t}</option>
                 `).join('');
 
