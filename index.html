@@ -1595,6 +1595,10 @@
                 <a href="#queue" class="nav-item" data-target="queue">
                     <i class="fas fa-list-check"></i> Review Queue
                 </a>
+                <a href="#bulk-reviews" class="nav-item" data-target="bulk-reviews">
+                    <i class="fas fa-boxes-stacked" style="color:var(--warning);"></i> Bulk ZIP Review
+                    <span class="badge badge-pending" id="bulk-zip-pending-badge" style="margin-left:auto; font-size:0.7rem; display:none;">0</span>
+                </a>
                 <a href="#approved" class="nav-item" data-target="approved">
                     <i class="fas fa-check-double"></i> Approved Questions
                 </a>
@@ -1804,6 +1808,47 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- Bulk ZIP Review Page -->
+            <section class="page-content" id="page-bulk-reviews">
+                <div class="filters-bar">
+                    <select class="filter-select" id="filter-bulk-status">
+                        <option value="all" selected>All Batches</option>
+                        <option value="pending">Pending Approval</option>
+                        <option value="approved">Fully Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <input type="text" class="filter-select" id="filter-bulk-search" placeholder="Search by Submitter Email, ZIP name, Course..." style="flex:1;">
+                </div>
+
+                <div class="stats-grid" style="margin-bottom: 1.5rem;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);"><i class="fas fa-file-archive"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-bulk-pending-batches">0</div>
+                            <div class="stat-label">Pending ZIP Batches</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);"><i class="fas fa-file-pdf"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-bulk-total-files">0</div>
+                            <div class="stat-label">Total Files in Batches</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);"><i class="fas fa-user-graduate"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-bulk-submitters">0</div>
+                            <div class="stat-label">Academic Contributors</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bulk-zip-batches-container" style="display:flex; flex-direction:column; gap:1.25rem;">
+                    <!-- JS Populated Batch Cards -->
                 </div>
             </section>
 
@@ -2823,13 +2868,22 @@
                     const titleMap = {
                         'dashboard': 'Dashboard',
                         'queue': 'Review Queue',
+                        'bulk-reviews': 'Bulk ZIP Review',
                         'approved': 'Approved Questions',
                         'audit': 'Audit Logs'
                     };
                     document.getElementById('page-title').textContent = titleMap[targetId] || 'Admin Portal';
+                    if (targetId === 'bulk-reviews') {
+                        renderBulkZipReviewPage();
+                    }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
+
+            const filterBulkStatus = document.getElementById('filter-bulk-status');
+            const filterBulkSearch = document.getElementById('filter-bulk-search');
+            if (filterBulkStatus) filterBulkStatus.addEventListener('change', renderBulkZipReviewPage);
+            if (filterBulkSearch) filterBulkSearch.addEventListener('input', renderBulkZipReviewPage);
 
             const globalSearchInput = document.getElementById('global-search');
             if (globalSearchInput) {
@@ -2837,10 +2891,13 @@
                     const val = e.target.value;
                     const filterSearch = document.getElementById('filter-search');
                     const filterApprovedSearch = document.getElementById('filter-approved-search');
+                    const fBulkSearch = document.getElementById('filter-bulk-search');
                     if (filterSearch) filterSearch.value = val;
                     if (filterApprovedSearch) filterApprovedSearch.value = val;
+                    if (fBulkSearch) fBulkSearch.value = val;
                     renderQueueTable();
                     renderApprovedTable();
+                    renderBulkZipReviewPage();
                 });
             }
 
@@ -3070,6 +3127,7 @@
                 renderDashboardRecent();
                 renderQueueTable();
                 renderApprovedTable();
+                renderBulkZipReviewPage();
             };
 
             collectionsToListen.forEach(colName => {
@@ -3242,12 +3300,19 @@
                 const status = sub.status || 'pending';
                 const fileUrl = getMainFileUrl(sub) || '#';
                 const mainName = formatPdfDownloadName(sub, false);
+                let originBadge = '';
+                if (sub.isBulkZip) {
+                    originBadge = `<span class="badge" style="background:rgba(245,158,11,0.15); color:var(--warning); font-size:0.65rem; padding:0.15rem 0.4rem; border-radius:4px; margin-left:0.35rem;" title="Submitted via Bulk ZIP archive"><i class="fas fa-file-archive"></i> Bulk ZIP</span>`;
+                } else if (sub.isDirectUpload) {
+                    originBadge = `<span class="badge" style="background:rgba(59,130,246,0.15); color:var(--info); font-size:0.65rem; padding:0.15rem 0.4rem; border-radius:4px; margin-left:0.35rem;" title="Submitted via Direct Auto-Detect"><i class="fas fa-bolt"></i> Direct</span>`;
+                }
+
                 tr.innerHTML = `
                     <td class="nowrap-cell"><strong>${sub.courseCode}</strong></td>
                     <td class="nowrap-cell">${sub.trimester ? 'T' + sub.trimester : '-'} | ${decodeSemester(sub.semester)}</td>
                     <td>${sub.topic || '-'}</td>
                     <td class="nowrap-cell">${capitalize(sub.materialType || sub.type || 'Question')}</td>
-                    <td>${sub.submitterEmail || 'Anonymous'}</td>
+                    <td>${sub.submitterEmail || 'Anonymous'}${originBadge}</td>
                     <td class="nowrap-cell"><span class="badge ${getBadgeClass(status)}">${capitalize(status.replace('_', ' '))}</span></td>
                     <td>
                         <div class="table-actions-group">
@@ -3752,6 +3817,385 @@
         document.getElementById('btn-delete').addEventListener('click', () => {
             if (currentReviewDoc) deleteSubmission(currentReviewDoc);
         });
+
+        // ==========================================
+        // BULK ZIP REVIEW & BATCH MODERATION
+        // ==========================================
+        const renderBulkZipReviewPage = () => {
+            const container = document.getElementById('bulk-zip-batches-container');
+            if (!container) return;
+
+            const filterStatus = document.getElementById('filter-bulk-status')?.value || 'all';
+            const filterSearch = (document.getElementById('filter-bulk-search')?.value || '').toLowerCase().trim();
+
+            const getDateVal = (item) => {
+                const ts = item.submittedAt || item.createdAt || item.updatedAt;
+                if (!ts) return 0;
+                if (ts.toDate) return ts.toDate().getTime();
+                if (ts.seconds) return ts.seconds * 1000;
+                const p = new Date(ts).getTime();
+                return isNaN(p) ? 0 : p;
+            };
+
+            // Find all bulk zip items
+            const bulkItems = allSubmissions.filter(s => s.isBulkZip === true || (s.batchId && s.batchId.startsWith('zip_')) || s.sourceZipName);
+
+            // Group into batches
+            const batchMap = new Map();
+            bulkItems.forEach(item => {
+                const bId = item.batchId || `${item.batchName || item.sourceZipName || 'bulk_zip'}_${item.submitterEmail || 'user'}_${Math.floor(getDateVal(item) / 3600000)}`;
+                if (!batchMap.has(bId)) {
+                    batchMap.set(bId, {
+                        batchId: bId,
+                        batchName: item.batchName || item.sourceZipName || 'Bulk ZIP Submission',
+                        submitterEmail: item.submitterEmail || 'Anonymous',
+                        submitterName: item.submitterName || '',
+                        submittedAt: item.submittedAt || item.createdAt,
+                        items: []
+                    });
+                }
+                batchMap.get(bId).items.push(item);
+            });
+
+            const batches = Array.from(batchMap.values());
+            batches.sort((a, b) => getDateVal(b.items[0]) - getDateVal(a.items[0]));
+
+            let pendingBatchesCount = 0;
+            let totalFilesInBatches = 0;
+            const submitterSet = new Set();
+
+            batches.forEach(b => {
+                totalFilesInBatches += b.items.length;
+                if (b.submitterEmail) submitterSet.add(b.submitterEmail.toLowerCase());
+                const hasPending = b.items.some(i => (i.status || 'pending').toLowerCase() === 'pending' || (i.status || '').toLowerCase() === 'under_review');
+                if (hasPending) pendingBatchesCount++;
+            });
+
+            const statPendingBatches = document.getElementById('stat-bulk-pending-batches');
+            const statTotalFiles = document.getElementById('stat-bulk-total-files');
+            const statSubmitters = document.getElementById('stat-bulk-submitters');
+            const sidebarBadge = document.getElementById('bulk-zip-pending-badge');
+
+            if (statPendingBatches) statPendingBatches.textContent = pendingBatchesCount;
+            if (statTotalFiles) statTotalFiles.textContent = totalFilesInBatches;
+            if (statSubmitters) statSubmitters.textContent = submitterSet.size;
+
+            if (sidebarBadge) {
+                if (pendingBatchesCount > 0) {
+                    sidebarBadge.textContent = pendingBatchesCount;
+                    sidebarBadge.style.display = 'inline-block';
+                } else {
+                    sidebarBadge.style.display = 'none';
+                }
+            }
+
+            // Filter batches
+            const filteredBatches = batches.filter(b => {
+                const pendingItems = b.items.filter(i => (i.status || 'pending').toLowerCase() === 'pending' || (i.status || '').toLowerCase() === 'under_review');
+                const approvedItems = b.items.filter(i => isDocApproved(i));
+                const rejectedItems = b.items.filter(i => (i.status || '').toLowerCase() === 'rejected');
+
+                if (filterStatus === 'pending' && pendingItems.length === 0) return false;
+                if (filterStatus === 'approved' && approvedItems.length !== b.items.length) return false;
+                if (filterStatus === 'rejected' && rejectedItems.length === 0) return false;
+
+                if (filterSearch) {
+                    const matchBatch = `${b.batchName} ${b.submitterEmail} ${b.submitterName}`.toLowerCase().includes(filterSearch);
+                    const matchFile = b.items.some(i => `${i.courseCode} ${i.topic || ''} ${i.originalFilename || ''}`.toLowerCase().includes(filterSearch));
+                    if (!matchBatch && !matchFile) return false;
+                }
+                return true;
+            });
+
+            if (filteredBatches.length === 0) {
+                container.innerHTML = `
+                    <div class="card" style="text-align:center; padding:3rem 1.5rem; color:var(--text-muted);">
+                        <i class="fas fa-file-archive" style="font-size:2.5rem; color:var(--warning); opacity:0.6; margin-bottom:0.75rem;"></i>
+                        <h4 style="margin-bottom:0.35rem; color:var(--text-main);">No Bulk ZIP Submissions Found</h4>
+                        <p style="font-size:0.85rem; margin:0;">When students submit questions via Bulk ZIP from the Question Bank, they will appear here for batch review and approval.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredBatches.map(b => {
+                const pendingItems = b.items.filter(i => (i.status || 'pending').toLowerCase() === 'pending' || (i.status || '').toLowerCase() === 'under_review');
+                const approvedItems = b.items.filter(i => isDocApproved(i));
+                const rejectedItems = b.items.filter(i => (i.status || '').toLowerCase() === 'rejected');
+
+                let batchBadge = `<span class="badge badge-pending" style="font-size:0.75rem;"><i class="fas fa-clock"></i> ${pendingItems.length} Pending Approval</span>`;
+                if (pendingItems.length === 0 && approvedItems.length > 0) {
+                    batchBadge = `<span class="badge badge-approved" style="font-size:0.75rem;"><i class="fas fa-check-double"></i> All ${approvedItems.length} Approved</span>`;
+                } else if (pendingItems.length === 0 && rejectedItems.length === b.items.length) {
+                    batchBadge = `<span class="badge badge-rejected" style="font-size:0.75rem;"><i class="fas fa-times-circle"></i> Rejected</span>`;
+                }
+
+                const fileRows = b.items.map(item => {
+                    const fUrl = getMainFileUrl(item) || '#';
+                    const mainName = formatPdfDownloadName(item, false);
+                    const st = String(item.status || 'pending').toLowerCase();
+                    const isAppr = isDocApproved(item);
+
+                    return `
+                        <tr>
+                            <td>
+                                <div style="font-weight:600; font-size:0.85rem; color:var(--text-main); display:flex; align-items:center; gap:0.4rem;">
+                                    <i class="fas fa-file-pdf" style="color:var(--danger);"></i>
+                                    <span>${item.originalFilename || item.filePath || 'Question.pdf'}</span>
+                                </div>
+                            </td>
+                            <td class="nowrap-cell"><strong>${item.courseCode}</strong><br><small style="color:var(--text-muted);">${getCourseTitle(item.courseCode)}</small></td>
+                            <td class="nowrap-cell">${item.examType || 'Midterm'}</td>
+                            <td class="nowrap-cell">${decodeSemester(item.semester)} ${item.trimester ? '(T' + item.trimester + ')' : ''}</td>
+                            <td class="nowrap-cell">${capitalize(item.materialType || item.type || 'Question')}</td>
+                            <td class="nowrap-cell">
+                                ${item.solutionPdfUrl || (item.materialAssets && item.materialAssets.length > 1) 
+                                    ? '<span style="color:var(--success); font-weight:600; font-size:0.75rem;"><i class="fas fa-check-circle"></i> Paired</span>' 
+                                    : '<span style="color:var(--text-muted); font-size:0.75rem;">None</span>'}
+                            </td>
+                            <td class="nowrap-cell">
+                                <span class="badge ${isAppr ? 'badge-approved' : (st === 'rejected' ? 'badge-rejected' : 'badge-pending')}" style="font-size:0.7rem;">
+                                    ${capitalize(st)}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="table-actions-group">
+                                    <button type="button" onclick="forceDownloadFile('${fUrl}', '${mainName}')" class="btn btn-outline" style="padding:0.25rem 0.5rem; font-size:0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                                    ${!isAppr ? `<button class="btn btn-outline btn-quick-approve" data-id="${item.id}" style="color:var(--success); border-color:var(--success); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Approve File"><i class="fas fa-check"></i></button>` : ''}
+                                    ${st !== 'rejected' ? `<button class="btn btn-outline btn-quick-reject" data-id="${item.id}" style="color:var(--danger); border-color:var(--danger); padding:0.25rem 0.5rem; font-size:0.8rem;" title="Reject File"><i class="fas fa-times"></i></button>` : ''}
+                                    <button class="btn btn-outline btn-review" data-id="${item.id}" style="padding:0.25rem 0.5rem; font-size:0.8rem;">Review</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="card" style="border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-sm); margin-bottom:1rem;" id="batch-card-${b.batchId}">
+                        <div class="card-header" style="background:var(--surface-2); padding:1rem 1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; border-bottom:1px solid var(--border);">
+                            <div style="display:flex; align-items:center; gap:0.85rem; flex-wrap:wrap;">
+                                <div style="width:42px; height:42px; border-radius:10px; background:rgba(245, 158, 11, 0.15); color:var(--warning); display:flex; align-items:center; justify-content:center; font-size:1.35rem;">
+                                    <i class="fas fa-file-archive"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:1rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                                        <span>${b.batchName}</span>
+                                        ${batchBadge}
+                                    </div>
+                                    <div style="font-size:0.8rem; color:var(--text-muted); display:flex; align-items:center; gap:0.75rem; margin-top:0.2rem; flex-wrap:wrap;">
+                                        <span><i class="fas fa-user-graduate" style="color:var(--orange);"></i> <strong>${b.submitterEmail}</strong></span>
+                                        <span>&bull;</span>
+                                        <span><i class="fas fa-calendar-alt"></i> ${formatDate(b.items[0])}</span>
+                                        <span>&bull;</span>
+                                        <span><i class="fas fa-file-pdf"></i> ${b.items.length} Total Material(s)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                                ${pendingItems.length > 0 ? `
+                                    <button type="button" class="btn btn-success" onclick="approveBulkZipBatch('${b.batchId}')" style="background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:0.4rem 0.9rem; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;" title="Approve and publish all pending questions in this ZIP batch">
+                                        <i class="fas fa-check-double"></i> Approve All (${pendingItems.length})
+                                    </button>
+                                    <button type="button" class="btn btn-outline" onclick="rejectBulkZipBatch('${b.batchId}')" style="color:var(--danger); border-color:var(--danger); padding:0.4rem 0.85rem; font-size:0.8rem; font-weight:600; display:inline-flex; align-items:center; gap:0.4rem;" title="Reject all pending questions in this ZIP batch">
+                                        <i class="fas fa-times-circle"></i> Reject All
+                                    </button>
+                                ` : ''}
+                                <button type="button" class="btn btn-outline btn-toggle-batch-table" data-batch="${b.batchId}" style="padding:0.4rem 0.85rem; font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem;">
+                                    <i class="fas fa-list"></i> <span class="btn-toggle-text">Show Files (${b.items.length})</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive batch-files-wrapper" id="batch-files-${b.batchId}" style="display:none; border-top:1px solid var(--border);">
+                            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                                <thead>
+                                    <tr style="background:var(--surface);">
+                                        <th>File Name</th>
+                                        <th>Course</th>
+                                        <th>Exam</th>
+                                        <th>Semester</th>
+                                        <th>Type</th>
+                                        <th>Solution</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${fileRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Attach toggle listeners
+            container.querySelectorAll('.btn-toggle-batch-table').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const bId = btn.getAttribute('data-batch');
+                    const wrapper = document.getElementById(`batch-files-${bId}`);
+                    const textSpan = btn.querySelector('.btn-toggle-text');
+                    if (wrapper) {
+                        const isHidden = wrapper.style.display === 'none';
+                        wrapper.style.display = isHidden ? 'block' : 'none';
+                        if (textSpan) {
+                            textSpan.textContent = isHidden ? 'Hide Files' : `Show Files (${wrapper.querySelectorAll('tbody tr').length})`;
+                        }
+                    }
+                });
+            });
+
+            attachReviewListeners();
+        };
+
+        window.approveBulkZipBatch = async function(batchId) {
+            const getDateVal = (item) => {
+                const ts = item.submittedAt || item.createdAt || item.updatedAt;
+                if (!ts) return 0;
+                if (ts.toDate) return ts.toDate().getTime();
+                if (ts.seconds) return ts.seconds * 1000;
+                const p = new Date(ts).getTime();
+                return isNaN(p) ? 0 : p;
+            };
+
+            const batchItems = allSubmissions.filter(s => {
+                const bId = s.batchId || `${s.batchName || s.sourceZipName || 'bulk_zip'}_${s.submitterEmail || 'user'}_${Math.floor(getDateVal(s) / 3600000)}`;
+                return (bId === batchId || s.batchId === batchId) && ((s.status || 'pending').toLowerCase() === 'pending' || (s.status || '').toLowerCase() === 'under_review');
+            });
+
+            if (batchItems.length === 0) {
+                showToast('No pending questions found in this batch.', 'warning');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to approve all ${batchItems.length} question(s) in this ZIP batch and publish them to the Question Bank?`)) {
+                return;
+            }
+
+            const adminEmail = currentUser?.email || 'admin@uiu.ac.bd';
+            let successCount = 0;
+
+            for (const item of batchItems) {
+                const targetCollection = item._collection || QUESTION_COLLECTION;
+                const docRef = doc(db, targetCollection, item.id);
+                const updateData = {
+                    status: 'approved',
+                    isApproved: true,
+                    approvedAt: serverTimestamp(),
+                    approvedByEmail: adminEmail,
+                    updatedAt: serverTimestamp()
+                };
+
+                try {
+                    await updateDoc(docRef, updateData);
+                } catch (e) {
+                    try {
+                        await setDoc(docRef, updateData, { merge: true });
+                    } catch (setErr) {
+                        console.warn('Fallback setDoc error:', setErr);
+                    }
+                }
+
+                item.status = 'approved';
+                item.isApproved = true;
+                successCount++;
+
+                // Audit Log
+                try {
+                    await addDoc(collection(db, AUDIT_COLLECTION), {
+                        action: 'APPROVE_BULK_ZIP',
+                        adminEmail: adminEmail,
+                        targetId: item.id,
+                        targetCourse: item.courseCode,
+                        batchId: batchId,
+                        notes: `Bulk ZIP batch approval (${item.originalFilename || item.topic})`,
+                        timestamp: serverTimestamp()
+                    });
+                } catch (auditErr) {
+                    console.warn('Audit error:', auditErr);
+                }
+            }
+
+            showToast(`Approved ${successCount} question(s) from ZIP archive!`, 'success');
+            renderBulkZipReviewPage();
+            renderQueueTable();
+            renderApprovedTable();
+            renderDashboardRecent();
+        };
+
+        window.rejectBulkZipBatch = async function(batchId) {
+            const getDateVal = (item) => {
+                const ts = item.submittedAt || item.createdAt || item.updatedAt;
+                if (!ts) return 0;
+                if (ts.toDate) return ts.toDate().getTime();
+                if (ts.seconds) return ts.seconds * 1000;
+                const p = new Date(ts).getTime();
+                return isNaN(p) ? 0 : p;
+            };
+
+            const batchItems = allSubmissions.filter(s => {
+                const bId = s.batchId || `${s.batchName || s.sourceZipName || 'bulk_zip'}_${s.submitterEmail || 'user'}_${Math.floor(getDateVal(s) / 3600000)}`;
+                return (bId === batchId || s.batchId === batchId) && ((s.status || 'pending').toLowerCase() === 'pending' || (s.status || '').toLowerCase() === 'under_review');
+            });
+
+            if (batchItems.length === 0) {
+                showToast('No pending questions found in this batch.', 'warning');
+                return;
+            }
+
+            const reason = prompt(`Enter reason for rejecting this ZIP batch (${batchItems.length} questions):`, 'Incomplete or unreadable files');
+            if (reason === null) return;
+
+            const adminEmail = currentUser?.email || 'admin@uiu.ac.bd';
+            let count = 0;
+
+            for (const item of batchItems) {
+                const targetCollection = item._collection || QUESTION_COLLECTION;
+                const docRef = doc(db, targetCollection, item.id);
+                const updateData = {
+                    status: 'rejected',
+                    isApproved: false,
+                    rejectedAt: serverTimestamp(),
+                    rejectedByEmail: adminEmail,
+                    adminComment: reason,
+                    updatedAt: serverTimestamp()
+                };
+
+                try {
+                    await updateDoc(docRef, updateData);
+                } catch (e) {
+                    try {
+                        await setDoc(docRef, updateData, { merge: true });
+                    } catch (setErr) {
+                        console.warn('Fallback setDoc error:', setErr);
+                    }
+                }
+
+                item.status = 'rejected';
+                item.adminComment = reason;
+                count++;
+
+                // Audit Log
+                try {
+                    await addDoc(collection(db, AUDIT_COLLECTION), {
+                        action: 'REJECT_BULK_ZIP',
+                        adminEmail: adminEmail,
+                        targetId: item.id,
+                        targetCourse: item.courseCode,
+                        batchId: batchId,
+                        notes: reason,
+                        timestamp: serverTimestamp()
+                    });
+                } catch (auditErr) {
+                    console.warn('Audit error:', auditErr);
+                }
+            }
+
+            showToast(`Rejected ${count} question(s) from ZIP archive.`, 'info');
+            renderBulkZipReviewPage();
+            renderQueueTable();
+            renderApprovedTable();
+            renderDashboardRecent();
+        };
 
         // ==========================================
         // ADMIN DIRECT UPLOAD & DROPZONES
@@ -5595,6 +6039,9 @@
         </a>
         <a href="#queue" class="bottom-nav-item" data-target="queue" title="Review Queue">
             <i class="fas fa-list-check"></i>
+        </a>
+        <a href="#bulk-reviews" class="bottom-nav-item" data-target="bulk-reviews" title="Bulk ZIP Review">
+            <i class="fas fa-boxes-stacked"></i>
         </a>
         <a href="#approved" class="bottom-nav-item" data-target="approved" title="Approved Questions">
             <i class="fas fa-check-double"></i>
