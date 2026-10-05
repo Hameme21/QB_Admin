@@ -3793,6 +3793,172 @@
             });
         }
 
+        // =========================================================
+        // BACKGROUND UPLOAD KEEP-ALIVE & PROCESS MANAGER (ADMIN)
+        // Keeps uploads running at full speed even when tab is hidden/inactive
+        // =========================================================
+        const BackgroundUploadManager = (() => {
+            let audioCtx = null;
+            let oscillator = null;
+            let gainNode = null;
+            let wakeLock = null;
+            let activeUploadCount = 0;
+            const originalTitle = document.title || 'UIU CSE Question Bank - Admin Portal';
+            let worker = null;
+
+            // 1. Inline Web Worker for unthrottled timer delays in background tabs
+            try {
+                const workerCode = `
+                    self.onmessage = function(e) {
+                        var id = e.data.id;
+                        var ms = e.data.ms;
+                        setTimeout(function() {
+                            self.postMessage({ id: id });
+                        }, ms);
+                    };
+                `;
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                worker = new Worker(URL.createObjectURL(blob));
+            } catch (wErr) {
+                console.warn('[BackgroundKeepAlive] Worker creation fallback to window timers:', wErr);
+            }
+
+            let nextTimerId = 1;
+            const pendingTimers = new Map();
+            if (worker) {
+                worker.onmessage = function(e) {
+                    const resolve = pendingTimers.get(e.data.id);
+                    if (resolve) {
+                        pendingTimers.delete(e.data.id);
+                        resolve();
+                    }
+                };
+            }
+
+            function delay(ms) {
+                if (!worker) {
+                    return new Promise(r => setTimeout(r, ms));
+                }
+                return new Promise(resolve => {
+                    const id = nextTimerId++;
+                    pendingTimers.set(id, resolve);
+                    worker.postMessage({ id, ms });
+                });
+            }
+
+            async function start(reason = 'upload') {
+                activeUploadCount++;
+                if (activeUploadCount > 1) return; // Already active
+
+                // A. Web Audio Keep-Alive: Browser treats media playing tabs as active, preventing tab freezing & throttling
+                try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        if (!audioCtx || audioCtx.state === 'closed') {
+                            audioCtx = new AudioContextClass();
+                        }
+                        if (audioCtx.state === 'suspended') {
+                            await audioCtx.resume();
+                        }
+                        if (!oscillator) {
+                            oscillator = audioCtx.createOscillator();
+                            gainNode = audioCtx.createGain();
+                            // Inaudible gain (0.00001) keeps audio engine running continuously without sound
+                            gainNode.gain.setValueAtTime(0.00001, audioCtx.currentTime);
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioCtx.destination);
+                            oscillator.start();
+                        }
+                    }
+                } catch (audioErr) {
+                    console.debug('[BackgroundKeepAlive] Audio keep-alive unavailable:', audioErr);
+                }
+
+                // B. Screen Wake Lock: Keeps system awake during long batch uploads
+                try {
+                    if ('wakeLock' in navigator && !wakeLock) {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        wakeLock.addEventListener('release', () => { wakeLock = null; });
+                    }
+                } catch (wlErr) {
+                    console.debug('[BackgroundKeepAlive] Wake lock unavailable:', wlErr);
+                }
+            }
+
+            function stop() {
+                activeUploadCount = Math.max(0, activeUploadCount - 1);
+                if (activeUploadCount > 0) return; // Other uploads still active
+
+                // Release AudioContext
+                try {
+                    if (oscillator) {
+                        oscillator.stop();
+                        oscillator.disconnect();
+                        oscillator = null;
+                    }
+                    if (gainNode) {
+                        gainNode.disconnect();
+                        gainNode = null;
+                    }
+                    if (audioCtx && audioCtx.state !== 'closed') {
+                        audioCtx.close();
+                        audioCtx = null;
+                    }
+                } catch (e) {
+                    console.debug('[BackgroundKeepAlive] Error releasing audio keep-alive:', e);
+                }
+
+                // Release WakeLock
+                try {
+                    if (wakeLock) {
+                        wakeLock.release();
+                        wakeLock = null;
+                    }
+                } catch (e) {}
+
+                // Reset document title after a short delay
+                setTimeout(() => {
+                    if (activeUploadCount === 0) {
+                        document.title = originalTitle;
+                    }
+                }, 3000);
+            }
+
+            function updateTitle(statusText) {
+                if (activeUploadCount > 0 && statusText) {
+                    document.title = `${statusText} · QB Admin`;
+                }
+            }
+
+            // Protect against closing or navigating away during active upload
+            window.addEventListener('beforeunload', (e) => {
+                if (activeUploadCount > 0) {
+                    e.preventDefault();
+                    e.returnValue = 'Upload is currently in progress. If you leave or close this tab, your upload will be cancelled.';
+                    return e.returnValue;
+                }
+            });
+
+            // Visibility logger
+            document.addEventListener('visibilitychange', () => {
+                if (activeUploadCount > 0) {
+                    if (document.hidden) {
+                        console.log('[BackgroundKeepAlive] Admin tab switched to background. Keep-alive active; uploads continue unthrottled.');
+                    } else {
+                        console.log('[BackgroundKeepAlive] Admin tab returned to foreground.');
+                    }
+                }
+            });
+
+            return {
+                start,
+                stop,
+                delay,
+                updateTitle,
+                isActive: () => activeUploadCount > 0
+            };
+        })();
+
         async function uploadToCloudinary(assetType, file, courseCode, topic, onProgress, onStatus) {
             const maxAttempts = 4;
             let attempt = 0;
@@ -3869,7 +4035,7 @@
                         const notice = `Cloudinary processing capacity busy / throttled. Cooling down ${delaySec}s before retry (attempt ${attempt}/${maxAttempts - 1})...`;
                         if (typeof onStatus === 'function') onStatus(notice);
                         console.warn(`[Cloudinary Retry ${attempt}/${maxAttempts - 1}] Waiting ${delaySec}s due to: ${err.message}`);
-                        await new Promise(r => setTimeout(r, baseDelayMs));
+                        await BackgroundUploadManager.delay(baseDelayMs);
                     } else {
                         throw err;
                     }
@@ -4216,6 +4382,9 @@
                 status.innerHTML = '';
 
                 try {
+                    await BackgroundUploadManager.start('admin_upload');
+                    BackgroundUploadManager.updateTitle('Uploading material...');
+
                     const courseCodeInput = document.getElementById('adminUpCourseSearch').value.split('-')[0].trim();
                     const courseCode = document.getElementById('adminUpCourse').value || courseCodeInput;
                     if (!courseCode) throw new Error('Please select a valid course code.');
@@ -4269,18 +4438,25 @@
                     }
 
                     status.innerHTML = '<div style="font-size:0.8rem; color:var(--primary); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Uploading main file...</div>';
+                    BackgroundUploadManager.updateTitle('Uploading main file...');
                     const mainAssetType = materialType === 'Notes' ? 'note' : (materialType === 'Solution' ? 'solution' : 'question');
-                    const mainAsset = await uploadToCloudinary(mainAssetType, mainFile, courseCode, topic);
+                    const mainAsset = await uploadToCloudinary(mainAssetType, mainFile, courseCode, topic, (p) => {
+                        BackgroundUploadManager.updateTitle(`[${p}%] Uploading main file...`);
+                    });
 
                     const materialAssets = [mainAsset];
 
                     if (materialType === 'Question' && solFile) {
                         status.innerHTML = '<div style="font-size:0.8rem; color:var(--primary); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Uploading solution file...</div>';
-                        const solAsset = await uploadToCloudinary('solution', solFile, courseCode, topic);
+                        BackgroundUploadManager.updateTitle('Uploading solution file...');
+                        const solAsset = await uploadToCloudinary('solution', solFile, courseCode, topic, (p) => {
+                            BackgroundUploadManager.updateTitle(`[${p}%] Uploading solution file...`);
+                        });
                         materialAssets.push(solAsset);
                     }
 
                     status.innerHTML = '<div style="font-size:0.8rem; color:var(--success); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Publishing to Question Bank...</div>';
+                    BackgroundUploadManager.updateTitle('Publishing to Question Bank...');
 
                     // Add directly as approved to Firestore!
                     const newDocRef = await addDoc(collection(db, QUESTION_COLLECTION), {
@@ -4325,6 +4501,7 @@
                         console.warn('Audit log write skipped:', auditErr);
                     }
 
+                    BackgroundUploadManager.updateTitle('Published Successfully!');
                     showToast('Question uploaded and published directly!', 'success');
                     closeAdminUploadModal();
                     adminUploadForm.reset();
@@ -4345,6 +4522,7 @@
                     console.error('Direct upload failed:', err);
                     status.innerHTML = `<div style="font-size:0.8rem; color:var(--danger); margin-top:0.5rem;">Error: ${err.message}</div>`;
                 } finally {
+                    BackgroundUploadManager.stop();
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-check-circle"></i> Publish Directly';
                 }
@@ -5267,41 +5445,46 @@
                     zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
                 };
 
-                for (let i = 0; i < selectedItems.length; i++) {
-                    const item = selectedItems[i];
-                    const percent = Math.round(((i) / selectedItems.length) * 100);
-                    
-                    zipProgressPercent.textContent = `${percent}%`;
-                    zipProgressFill.style.width = `${percent}%`;
-                    zipProgressLabel.innerHTML = `<i class="fas fa-spinner fa-spin"></i> [${i + 1}/${selectedItems.length}] Uploading ${item.courseCode} ${item.examType}...`;
+                try {
+                    await BackgroundUploadManager.start('bulk_zip');
+                    BackgroundUploadManager.updateTitle(`[0/${selectedItems.length}] Batch Uploading...`);
 
-                    // Polite delay between consecutive files to avoid tripping Cloudinary burst limits
-                    if (i > 0) {
-                        await new Promise(r => setTimeout(r, 1500));
-                    }
+                    for (let i = 0; i < selectedItems.length; i++) {
+                        const item = selectedItems[i];
+                        const percent = Math.round(((i) / selectedItems.length) * 100);
+                        
+                        zipProgressPercent.textContent = `${percent}%`;
+                        zipProgressFill.style.width = `${percent}%`;
+                        zipProgressLabel.innerHTML = `<i class="fas fa-spinner fa-spin"></i> [${i + 1}/${selectedItems.length}] Uploading ${item.courseCode} ${item.examType}...`;
+                        BackgroundUploadManager.updateTitle(`[${i + 1}/${selectedItems.length} · ${percent}%] Uploading ${item.courseCode}...`);
 
-                    try {
-                        // 1. Extract Main File as Blob from JSZip
-                        const mainBlob = await item.zipEntry.async('blob');
-                        const mainFile = new File([mainBlob], item.originalFilename, { type: 'application/pdf' });
-
-                        zipConsoleLog.innerHTML += `<div>[${i + 1}/${selectedItems.length}] Uploading Cloudinary asset for ${item.courseCode} (${item.originalFilename})...</div>`;
-                        zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
-
-                        const mainAsset = await uploadToCloudinary(item.materialType === 'Notes' ? 'note' : 'question', mainFile, item.courseCode, item.topic, null, logStatus);
-                        const materialAssets = [mainAsset];
-
-                        // 2. Upload Paired Solution if present
-                        let solPdfUrl = null;
-                        if (item.pairedSolution && item.pairedSolution.zipEntry) {
-                            await new Promise(r => setTimeout(r, 1000));
-                            zipConsoleLog.innerHTML += `<div style="color:#38bdf8;">→ Uploading paired solution (${item.pairedSolution.originalFilename})...</div>`;
-                            const solBlob = await item.pairedSolution.zipEntry.async('blob');
-                            const solFile = new File([solBlob], item.pairedSolution.originalFilename, { type: 'application/pdf' });
-                            const solAsset = await uploadToCloudinary('solution', solFile, item.courseCode, item.topic, null, logStatus);
-                            materialAssets.push(solAsset);
-                            solPdfUrl = solAsset.pdfUrl;
+                        // Polite delay between consecutive files to avoid tripping Cloudinary burst limits
+                        if (i > 0) {
+                            await BackgroundUploadManager.delay(1500);
                         }
+
+                        try {
+                            // 1. Extract Main File as Blob from JSZip
+                            const mainBlob = await item.zipEntry.async('blob');
+                            const mainFile = new File([mainBlob], item.originalFilename, { type: 'application/pdf' });
+
+                            zipConsoleLog.innerHTML += `<div>[${i + 1}/${selectedItems.length}] Uploading Cloudinary asset for ${item.courseCode} (${item.originalFilename})...</div>`;
+                            zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
+
+                            const mainAsset = await uploadToCloudinary(item.materialType === 'Notes' ? 'note' : 'question', mainFile, item.courseCode, item.topic, null, logStatus);
+                            const materialAssets = [mainAsset];
+
+                            // 2. Upload Paired Solution if present
+                            let solPdfUrl = null;
+                            if (item.pairedSolution && item.pairedSolution.zipEntry) {
+                                await BackgroundUploadManager.delay(1000);
+                                zipConsoleLog.innerHTML += `<div style="color:#38bdf8;">→ Uploading paired solution (${item.pairedSolution.originalFilename})...</div>`;
+                                const solBlob = await item.pairedSolution.zipEntry.async('blob');
+                                const solFile = new File([solBlob], item.pairedSolution.originalFilename, { type: 'application/pdf' });
+                                const solAsset = await uploadToCloudinary('solution', solFile, item.courseCode, item.topic, null, logStatus);
+                                materialAssets.push(solAsset);
+                                solPdfUrl = solAsset.pdfUrl;
+                            }
 
                         const itemTopic = item.topic || `${item.examType} ${item.courseCode}`;
                         const itemCourseName = item.courseName || getCourseTitle(item.courseCode);
@@ -5356,10 +5539,12 @@
                         zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
                     }
                 }
-
+            } finally {
                 // Batch upload finished
                 isUploadingZip = false;
-                if (btnZipReset) btnZipReset.disabled = false;
+                    BackgroundUploadManager.stop();
+                    if (btnZipReset) btnZipReset.disabled = false;
+                }
 
                 // Remove successfully published files from queue so they no longer linger in queue table
                 parsedZipEntries = parsedZipEntries.filter(item => !item.isUploaded);
@@ -5374,6 +5559,7 @@
                 zipProgressPercent.textContent = '100%';
                 zipProgressFill.style.width = '100%';
                 zipProgressLabel.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success);"></i> Batch Upload Complete! (${successCount} published, ${failureCount} failed)`;
+                BackgroundUploadManager.updateTitle(`[Done] ${successCount} uploaded`);
                 
                 zipConsoleLog.innerHTML += `<div style="color:#34d399; font-weight:bold; margin-top:0.4rem;">[DONE] Batch upload finished: ${successCount} successful, ${failureCount} errors. Published files removed from queue.</div>`;
                 zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
