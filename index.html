@@ -1941,6 +1941,12 @@
                             <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Topic / Title</label>
                             <input type="text" id="edit-topic" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);" placeholder="e.g. Midterm Question 2024">
                         </div>
+                        <div style="margin-bottom:0.75rem;">
+                            <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.25rem;">Faculty Member</label>
+                            <select id="edit-faculty" class="input-control" style="width:100%; padding:0.4rem 0.6rem; font-size:0.85rem; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text-main);">
+                                <option value="">None / Not specified</option>
+                            </select>
+                        </div>
                         <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
                             <button type="button" class="btn btn-primary" id="btn-save-edit" style="padding:0.4rem 1rem; font-size:0.85rem;"><i class="fas fa-save"></i> Save Changes</button>
                         </div>
@@ -1960,6 +1966,10 @@
                     <div class="detail-group">
                         <h4>Topic / Title</h4>
                         <p id="modal-topic">Midterm Question Fall 23</p>
+                    </div>
+                    <div class="detail-group">
+                        <h4>Faculty Member</h4>
+                        <p id="modal-faculty">None specified</p>
                     </div>
                     <div class="detail-group">
                         <h4>Submitter Info</h4>
@@ -2086,9 +2096,16 @@
                         <input type="text" id="adminUpTopic" class="input-control" placeholder="e.g. Chapter 3 Summary, Midterm Exam 2025">
                     </div>
 
-                    <div class="form-group" id="adminFacultyGroup" style="margin-bottom:0.75rem;">
-                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" id="adminFacultyLabel">Faculty Name / Initial <span style="color:var(--text-muted); font-weight:normal;">(Recommended for Lab / Notes)</span></label>
-                        <input type="text" id="adminUpFaculty" class="input-control" placeholder="e.g. Dr. John Doe / AKM">
+                    <div class="form-group" id="adminFacultyGroup" style="margin-bottom:0.75rem; position:relative;">
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" id="adminFacultyLabel">Faculty Member <span style="color:var(--text-muted); font-weight:normal;">(Recommended for Lab / Notes)</span></label>
+                        <div style="position:relative; display:flex; align-items:center;">
+                            <input type="text" id="adminUpFacultySearch" class="input-control" placeholder="Search faculty name or initial (e.g., AnHq, Anindya)..." autocomplete="off" style="padding-right:2.5rem;">
+                            <button type="button" id="adminUpFacultyClearBtn" style="position:absolute; right:0.6rem; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; line-height:1; display:none; padding:4px;" title="Clear selected faculty">&times;</button>
+                        </div>
+                        <input type="hidden" id="adminUpFacultyId" value="">
+                        <input type="hidden" id="adminUpFacultyName" value="">
+                        <input type="hidden" id="adminUpFacultyCode" value="">
+                        <div id="adminUpFacultyDropdown" class="autocomplete-dropdown" style="position:absolute; top:100%; left:0; right:0; max-height:200px; overflow-y:auto; z-index:1000; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); box-shadow:var(--shadow-md); display:none;"></div>
                     </div>
 
                     <!-- File Dropzone 1: Main File -->
@@ -2311,6 +2328,58 @@
         const BACKEND_URL = 'https://qb-admin.onrender.com';
         const QUESTION_COLLECTION = 'question_bank_submissions';
         const AUDIT_COLLECTION = 'auditLogs';
+
+        // ==========================================
+        // FACULTIES STATE & HELPERS
+        // ==========================================
+        let facultiesList = [
+            { "id": 6496, "name": "Anindya Hoque (AnHq)", "code": "AnHq" },
+            { "id": 1001, "name": "Dr. Salekul Islam (SKI)", "code": "SKI" },
+            { "id": 1002, "name": "Dr. Md. Motaharul Islam (MMI)", "code": "MMI" },
+            { "id": 1003, "name": "Dr. Mohammad Nurul Huda (MNH)", "code": "MNH" },
+            { "id": 1004, "name": "Dr. Swakkhar Shatabda (SS)", "code": "SS" },
+            { "id": 1005, "name": "Dr. Dewan Md. Farid (DMF)", "code": "DMF" },
+            { "id": 1006, "name": "Dr. Hasan Sarwar (HS)", "code": "HS" },
+            { "id": 1007, "name": "Dr. Suman Ahmmed (SA)", "code": "SA" },
+            { "id": 1008, "name": "Dr. Novia Nurain (NN)", "code": "NN" },
+            { "id": 1009, "name": "Dr. Saddam Hossain Mukta (SHM)", "code": "SHM" },
+            { "id": 1010, "name": "Rubaiya Rahtin Khan (RRK)", "code": "RRK" },
+            { "id": 1011, "name": "Ferdous Sarwar (FS)", "code": "FS" },
+            { "id": 1012, "name": "Mirza Mohd. Shahriar Maswood (SMS)", "code": "SMS" },
+            { "id": 1013, "name": "Ahmed Hossain (AH)", "code": "AH" },
+            { "id": 1014, "name": "Tahsin Aziz (TA)", "code": "TA" },
+            { "id": 1015, "name": "Md. Tarek Hasan (TH)", "code": "TH" },
+            { "id": 1016, "name": "Nazmul Alam (NA)", "code": "NA" },
+            { "id": 1017, "name": "Sadia Sharmin (SSh)", "code": "SSh" },
+            { "id": 1018, "name": "Shoeb Mohammad (SM)", "code": "SM" },
+            { "id": 1019, "name": "Tanmoy Sen (TS)", "code": "TS" },
+            { "id": 1020, "name": "Chowdhury Mofizur Rahman (CMR)", "code": "CMR" }
+        ];
+
+        async function loadFaculties() {
+            try {
+                const res = await safeFetchJson('/api/faculties');
+                if (Array.isArray(res) && res.length > 0) {
+                    facultiesList = res;
+                    localStorage.setItem('qb_admin_faculties_cache', JSON.stringify(res));
+                }
+            } catch (e) {
+                console.warn('Could not fetch faculties from backend, using fallback:', e);
+                const cached = localStorage.getItem('qb_admin_faculties_cache');
+                if (cached) {
+                    try { facultiesList = JSON.parse(cached); } catch(_) {}
+                }
+            }
+        }
+
+        function buildSearchTokens(courseCode, courseName, topic, facName, facCode) {
+            const rawTokens = [courseCode, courseName, topic, facName, facCode]
+                .filter(Boolean)
+                .flatMap(str => String(str).toLowerCase().split(/[\s,._\-\/]+/))
+                .map(t => t.replace(/[^a-z0-9]/g, ''))
+                .filter(t => t.length > 0);
+            return Array.from(new Set(rawTokens));
+        }
 
         const CURRICULUM = [
             // Trimester 1
@@ -2695,6 +2764,7 @@
         const initApp = () => {
             setupNavigation();
             setupTheme();
+            loadFaculties();
             fetchSubmissions();
             fetchAuditLogs();
         };
@@ -3232,6 +3302,9 @@
             document.getElementById('modal-semester').textContent = `${decodeSemester(sub.semester)} ${sub.trimester ? '(Trimester '+sub.trimester+')' : ''}`;
             document.getElementById('modal-type').textContent = `${capitalize(sub.materialType)} ${sub.examType ? '- ' + capitalize(sub.examType) : ''}`;
             document.getElementById('modal-topic').textContent = sub.topic || 'N/A';
+            if (document.getElementById('modal-faculty')) {
+                document.getElementById('modal-faculty').textContent = sub.facultyName ? `${sub.facultyName}${sub.facultyCode ? ' ('+sub.facultyCode+')' : ''}` : 'None specified';
+            }
             document.getElementById('modal-submitter').textContent = sub.submitterEmail || 'N/A';
             document.getElementById('modal-date').textContent = formatDate(sub);
             document.getElementById('modal-comment').value = sub.adminComment || '';
@@ -3285,6 +3358,14 @@
             document.getElementById('edit-type').value = capitalize(sub.materialType || sub.type || 'Question');
             document.getElementById('edit-exam-type').value = capitalize(sub.examType || 'Midterm');
             document.getElementById('edit-topic').value = sub.topic || '';
+            const editFaculty = document.getElementById('edit-faculty');
+            if (editFaculty) {
+                if (editFaculty.options.length <= 1) {
+                    editFaculty.innerHTML = '<option value="">None / Not specified</option>' +
+                        facultiesList.map(f => `<option value="${f.id}">${f.name} (${f.code})</option>`).join('');
+                }
+                editFaculty.value = sub.facultyId || '';
+            }
             document.getElementById('edit-details-form').style.display = 'none';
 
             // Setup preview
@@ -3501,6 +3582,14 @@
                 const topic = document.getElementById('edit-topic').value;
                 const targetCollection = currentReviewDoc._collection || QUESTION_COLLECTION;
 
+                const editFacEl = document.getElementById('edit-faculty');
+                const selectedFacId = editFacEl ? editFacEl.value : '';
+                const facultyObj = facultiesList.find(f => String(f.id) === String(selectedFacId));
+                const facultyId = facultyObj ? Number(facultyObj.id) : null;
+                const facultyName = facultyObj ? facultyObj.name : '';
+                const facultyCode = facultyObj ? facultyObj.code : '';
+                const searchTokens = buildSearchTokens(courseCode, getCourseTitle(courseCode), topic, facultyName, facultyCode);
+
                 const updateData = { 
                     submitterName, 
                     courseCode, 
@@ -3509,7 +3598,11 @@
                     trimester, 
                     materialType: materialType.toLowerCase(), 
                     examType, 
-                    topic 
+                    topic,
+                    facultyId,
+                    facultyName,
+                    facultyCode,
+                    searchTokens
                 };
                 
                 const adminEmail = currentUser?.email || 'hamimasir5@gmail.com';
@@ -3529,7 +3622,7 @@
                         adminEmail: adminEmail,
                         targetId: currentReviewDoc.id,
                         targetCourse: courseCode,
-                        notes: `Updated submitter: ${submitterName}, course: ${courseCode}, sem: ${semester}, exam: ${examType}`,
+                        notes: `Updated submitter: ${submitterName}, course: ${courseCode}, sem: ${semester}, exam: ${examType}, faculty: ${facultyName || 'None'}`,
                         timestamp: serverTimestamp()
                     });
                 } catch (auditErr) {
@@ -3542,6 +3635,9 @@
                 document.getElementById('modal-semester').textContent = `${decodeSemester(semester)} ${trimester ? '(Trimester '+trimester+')' : ''}`;
                 document.getElementById('modal-type').textContent = `${capitalize(materialType)} ${examType ? '- ' + capitalize(examType) : ''}`;
                 document.getElementById('modal-topic').textContent = topic || 'N/A';
+                if (document.getElementById('modal-faculty')) {
+                    document.getElementById('modal-faculty').textContent = facultyName ? `${facultyName}${facultyCode ? ' ('+facultyCode+')' : ''}` : 'None specified';
+                }
                 if (document.getElementById('modal-submitter') && submitterName) {
                     document.getElementById('modal-submitter').textContent = `${submitterName} (${currentReviewDoc.submitterEmail || ''})`;
                 }
@@ -3847,6 +3943,91 @@
             });
         }
 
+        // Admin Faculty Autocomplete
+        const adminFacSearch = document.getElementById('adminUpFacultySearch');
+        const adminFacHiddenId = document.getElementById('adminUpFacultyId');
+        const adminFacHiddenName = document.getElementById('adminUpFacultyName');
+        const adminFacHiddenCode = document.getElementById('adminUpFacultyCode');
+        const adminFacClearBtn = document.getElementById('adminUpFacultyClearBtn');
+        const adminFacDropdown = document.getElementById('adminUpFacultyDropdown');
+
+        if (adminFacSearch && adminFacDropdown) {
+            const renderAdminFacResults = (filter) => {
+                const q = (filter || '').toLowerCase().trim();
+                const matches = q ? facultiesList.filter(f => {
+                    const nameMatch = f.name.toLowerCase().includes(q);
+                    const codeMatch = f.code.toLowerCase().includes(q);
+                    const cleanNameMatch = f.name.toLowerCase().replace(/[\s\(\)\.]/g, '').includes(q.replace(/[\s\(\)\.]/g, ''));
+                    return nameMatch || codeMatch || cleanNameMatch;
+                }) : facultiesList;
+
+                if (matches.length === 0) {
+                    adminFacDropdown.innerHTML = '<div style="padding:0.75rem 1rem; color:var(--text-muted); text-align:center; font-size:0.8rem;">No matching faculty found</div>';
+                } else {
+                    adminFacDropdown.innerHTML = matches.map(f => `
+                        <div class="admin-fac-item" data-id="${f.id}" data-name="${f.name}" data-code="${f.code}" style="padding:0.5rem 0.75rem; cursor:pointer; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+                            <span style="font-weight:600; color:var(--text-main);">${f.name}</span>
+                            <span class="badge" style="background:rgba(255,145,77,0.15); color:var(--orange); font-size:0.7rem; font-weight:700;">${f.code}</span>
+                        </div>
+                    `).join('');
+                }
+                adminFacDropdown.style.display = 'block';
+            };
+
+            adminFacSearch.addEventListener('focus', () => renderAdminFacResults(adminFacSearch.value));
+            adminFacSearch.addEventListener('input', () => {
+                renderAdminFacResults(adminFacSearch.value);
+                if (!adminFacSearch.value.trim()) {
+                    if (adminFacHiddenId) adminFacHiddenId.value = '';
+                    if (adminFacHiddenName) adminFacHiddenName.value = '';
+                    if (adminFacHiddenCode) adminFacHiddenCode.value = '';
+                    if (adminFacClearBtn) adminFacClearBtn.style.display = 'none';
+                }
+            });
+
+            adminFacDropdown.addEventListener('click', (e) => {
+                const item = e.target.closest('.admin-fac-item');
+                if (!item) return;
+                const id = item.dataset.id;
+                const name = item.dataset.name;
+                const code = item.dataset.code;
+
+                if (adminFacHiddenId) adminFacHiddenId.value = id;
+                if (adminFacHiddenName) adminFacHiddenName.value = name;
+                if (adminFacHiddenCode) adminFacHiddenCode.value = code;
+                adminFacSearch.value = name;
+                adminFacDropdown.style.display = 'none';
+                if (adminFacClearBtn) adminFacClearBtn.style.display = 'block';
+            });
+
+            adminFacDropdown.addEventListener('mouseover', (e) => {
+                const item = e.target.closest('.admin-fac-item');
+                if (item) item.style.background = 'var(--bg)';
+            });
+            adminFacDropdown.addEventListener('mouseout', (e) => {
+                const item = e.target.closest('.admin-fac-item');
+                if (item) item.style.background = '';
+            });
+
+            if (adminFacClearBtn) {
+                adminFacClearBtn.addEventListener('click', () => {
+                    if (adminFacHiddenId) adminFacHiddenId.value = '';
+                    if (adminFacHiddenName) adminFacHiddenName.value = '';
+                    if (adminFacHiddenCode) adminFacHiddenCode.value = '';
+                    adminFacSearch.value = '';
+                    adminFacClearBtn.style.display = 'none';
+                    adminFacDropdown.style.display = 'none';
+                    adminFacSearch.focus();
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#adminFacultyGroup')) {
+                    adminFacDropdown.style.display = 'none';
+                }
+            });
+        }
+
         function bindAdminDropzone(dropzoneId, inputId, contentId) {
             const dropzone = document.getElementById(dropzoneId);
             const input = document.getElementById(inputId);
@@ -3992,7 +4173,10 @@
                     const trimester = parseInt(document.getElementById('adminUpTrimester').value, 10);
                     const examType = (materialType === 'Question' || materialType === 'Solution') ? document.getElementById('adminUpExamType').value : (materialType === 'Lab' ? 'Lab' : 'Notes');
                     const topic = document.getElementById('adminUpTopic').value.trim();
-                    const facultyName = (document.getElementById('adminUpFaculty')?.value || '').trim();
+                    const facultyId = document.getElementById('adminUpFacultyId')?.value ? Number(document.getElementById('adminUpFacultyId').value) : null;
+                    const facultyName = (document.getElementById('adminUpFacultyName')?.value || document.getElementById('adminUpFacultySearch')?.value || '').trim();
+                    const facultyCode = (document.getElementById('adminUpFacultyCode')?.value || '').trim();
+                    const searchTokens = buildSearchTokens(courseCode, course.title, topic, facultyName, facultyCode);
 
                     if (materialType === 'Notes' && !topic) {
                         throw new Error('Please enter a Topic / Title for Lecture Notes.');
@@ -4049,7 +4233,10 @@
                         materialType: materialType === 'Solution' ? 'solution' : materialType,
                         examType,
                         topic: topic || (materialType === 'Solution' ? `${examType} Solution ${courseCode}` : `${examType} ${courseCode}`),
+                        facultyId: facultyId || null,
                         facultyName: facultyName || '',
+                        facultyCode: facultyCode || '',
+                        searchTokens: searchTokens || [],
                         materialAssets,
                         pdfUrl: mainAsset.pdfUrl,
                         solutionPdfUrl: materialType === 'Solution' ? mainAsset.pdfUrl : (solFile ? materialAssets.find(a => a.assetType === 'solution')?.pdfUrl : null),
@@ -4058,7 +4245,7 @@
                         approvedBy: 'Admin (Direct)',
                         submitterName: 'Admin Direct',
                         submitterEmail: currentUser?.email || 'hamimasir5@gmail.com',
-                        courseSearch: `${courseCode} ${course.title} ${topic} ${facultyName}`.toLowerCase(),
+                        courseSearch: `${courseCode} ${course.title} ${topic} ${facultyName} ${facultyCode}`.toLowerCase(),
                         materialGroup: materialType === 'Notes' ? 'notes' : (materialType === 'Solution' ? 'solutions' : 'questions'),
                         submittedAt: serverTimestamp(),
                         createdAt: serverTimestamp()
@@ -4080,8 +4267,16 @@
                     showToast('Question uploaded and published directly!', 'success');
                     closeAdminUploadModal();
                     adminUploadForm.reset();
-                    const adminFacInp = document.getElementById('adminUpFaculty');
-                    if (adminFacInp) adminFacInp.value = '';
+                    const adminFacSearchEl = document.getElementById('adminUpFacultySearch');
+                    const adminFacClearEl = document.getElementById('adminUpFacultyClearBtn');
+                    const adminFacIdEl = document.getElementById('adminUpFacultyId');
+                    const adminFacNameEl = document.getElementById('adminUpFacultyName');
+                    const adminFacCodeEl = document.getElementById('adminUpFacultyCode');
+                    if (adminFacSearchEl) adminFacSearchEl.value = '';
+                    if (adminFacClearEl) adminFacClearEl.style.display = 'none';
+                    if (adminFacIdEl) adminFacIdEl.value = '';
+                    if (adminFacNameEl) adminFacNameEl.value = '';
+                    if (adminFacCodeEl) adminFacCodeEl.value = '';
                     resetAdminDropzone('adminMainDropzone', 'adminUpMainFile', 'adminMainDropContent');
                     resetAdminDropzone('adminSolDropzone', 'adminUpSolFile', 'adminSolDropContent');
 
@@ -5051,16 +5246,29 @@
                             solPdfUrl = solAsset.pdfUrl;
                         }
 
+                        const itemTopic = item.topic || `${item.examType} ${item.courseCode}`;
+                        const itemCourseName = item.courseName || getCourseTitle(item.courseCode);
+                        const itemTokens = [item.courseCode, itemCourseName, itemTopic, item.facultyName || '', item.facultyCode || '']
+                            .filter(Boolean)
+                            .flatMap(str => String(str).toLowerCase().split(/[\s,._\-\/]+/))
+                            .map(t => t.replace(/[^a-z0-9]/g, ''))
+                            .filter(t => t.length > 0);
+                        const zipSearchTokens = Array.from(new Set(itemTokens));
+
                         // 3. Save to Firestore as Approved
                         const newDocData = {
                             courseCode: item.courseCode.replace(/\s+/g, ' ').toUpperCase(),
-                            courseName: item.courseName || getCourseTitle(item.courseCode),
+                            courseName: itemCourseName,
                             semester: item.semester,
                             trimester: item.trimester || 1,
                             type: item.materialType || 'Question',
                             materialType: item.materialType || 'Question',
                             examType: item.examType || 'Midterm',
-                            topic: item.topic || `${item.examType} ${item.courseCode}`,
+                            topic: itemTopic,
+                            facultyId: item.facultyId || null,
+                            facultyName: item.facultyName || '',
+                            facultyCode: item.facultyCode || '',
+                            searchTokens: zipSearchTokens,
                             materialAssets,
                             pdfUrl: mainAsset.pdfUrl,
                             solutionPdfUrl: solPdfUrl,
@@ -5069,7 +5277,7 @@
                             approvedBy: 'Admin (Bulk ZIP)',
                             submitterName: 'Admin (Bulk ZIP)',
                             submitterEmail: currentUser?.email || 'hamimasir5@gmail.com',
-                            courseSearch: `${item.courseCode} ${item.courseName} ${item.topic}`.toLowerCase(),
+                            courseSearch: `${item.courseCode} ${itemCourseName} ${itemTopic}`.toLowerCase(),
                             materialGroup: item.materialType === 'Notes' ? 'notes' : 'questions',
                             submittedAt: serverTimestamp(),
                             createdAt: serverTimestamp()
