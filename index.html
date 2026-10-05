@@ -2064,7 +2064,6 @@
                             <select id="adminUpType" class="input-control" required>
                                 <option value="Question">Question Paper</option>
                                 <option value="Solution">Solution</option>
-                                <option value="Lab">Lab Material</option>
                                 <option value="Notes">Lecture Notes</option>
                             </select>
                         </div>
@@ -2383,110 +2382,152 @@
 
         const CURRICULUM = [
             // Trimester 1
-            { code: 'ENG 1011', title: 'Intensive English I', credits: 3, trimester: 1, aliases: ['English I'] },
-            { code: 'CSE 1112', title: 'Introduction to Computer Systems', credits: 1, trimester: 1, aliases: ['ICS'] },
+            { code: 'ENG 1011', title: 'English I', credits: 3, trimester: 1, aliases: ['Intensive English I'] },
             { code: 'BDS 1201', title: 'History of the Emergence of Bangladesh', credits: 2, trimester: 1, aliases: ['HEB'] },
+            { code: 'CSE 1110', title: 'Introduction to Computer Systems', credits: 1, trimester: 1, aliases: ['ICS', 'CSE 1112'] },
             { code: 'MATH 1151', title: 'Fundamental Calculus', credits: 3, trimester: 1, aliases: ['Calculus'] },
             // Trimester 2
-            { code: 'ENG 1013', title: 'Intensive English II', credits: 3, trimester: 2, aliases: ['English II'] },
-            { code: 'CSE 1111', title: 'SPL', credits: 3, trimester: 2, aliases: ['Structured Programming Language', 'C Programming'] },
-            { code: 'CSE 1112', title: 'SPL Lab', credits: 1, trimester: 2, aliases: ['Structured Programming Language Lab'] },
+            { code: 'ENG 1013', title: 'English II', credits: 3, trimester: 2, aliases: ['Intensive English II'] },
+            { code: 'CSE 1111', title: 'Structured Programming Language', credits: 3, trimester: 2, aliases: ['SPL', 'C Programming'] },
+            { code: 'CSE 1112', title: 'Structured Programming Language Laboratory', credits: 1, trimester: 2, aliases: ['SPL Lab', 'Structured Programming Language Lab'] },
             { code: 'CSE 2213', title: 'Discrete Mathematics', credits: 3, trimester: 2, aliases: ['DM'] },
             // Trimester 3
-            { code: 'MATH 2183', title: 'Calculus & Linear Algebra', credits: 3, trimester: 3, aliases: [] },
-            { code: 'CSE 2215', title: 'Data Structures & Algo I', credits: 3, trimester: 3, aliases: ['DSA I', 'DSA', 'Data Structures'] },
-            { code: 'CSE 2216', title: 'DSA I Lab', credits: 1, trimester: 3, aliases: ['Data Structures Lab'] },
+            { code: 'MATH 2183', title: 'Calculus and Linear Algebra', credits: 3, trimester: 3, aliases: ['Calculus & Linear Algebra'] },
             { code: 'PHY 2105', title: 'Physics', credits: 3, trimester: 3, aliases: ['Physics I'] },
             { code: 'PHY 2106', title: 'Physics Lab', credits: 1, trimester: 3, aliases: [] },
+            { code: 'CSE 2215', title: 'Data Structure and Algorithms I', credits: 3, trimester: 3, aliases: ['DSA I', 'DSA', 'Data Structures & Algo I', 'Data Structures'] },
+            { code: 'CSE 2216', title: 'Data Structure and Algorithms I Laboratory', credits: 1, trimester: 3, aliases: ['DSA I Lab', 'Data Structures Lab'] },
             // Trimester 4
+            { code: 'MATH 2201', title: 'Coordinate Geometry and Vector Analysis', credits: 3, trimester: 4, aliases: ['Coord Geometry & Vector'] },
             { code: 'CSE 1325', title: 'Digital Logic Design', credits: 3, trimester: 4, aliases: ['DLD'] },
-            { code: 'CSE 1326', title: 'DLD Lab', credits: 1, trimester: 4, aliases: ['Digital Logic Design Lab'] },
-            { code: 'MATH 2201', title: 'Coord Geometry & Vector', credits: 3, trimester: 4, aliases: ['Coordinate Geometry & Vector Analysis'] },
+            { code: 'CSE 1326', title: 'Digital Logic Design Lab', credits: 1, trimester: 4, aliases: ['DLD Lab'] },
             { code: 'CSE 1115', title: 'Object Oriented Programming', credits: 3, trimester: 4, aliases: ['OOP'] },
-            { code: 'CSE 1116', title: 'OOP Lab', credits: 1, trimester: 4, aliases: ['Object Oriented Programming Lab'] },
+            { code: 'CSE 1116', title: 'Object Oriented Programming Lab', credits: 1, trimester: 4, aliases: ['OOP Lab'] },
             // Trimester 5
-            { code: 'CSE 2217', title: 'Data Structures & Algo II', credits: 3, trimester: 5, aliases: ['DSA II'] },
-            { code: 'CSE 2218', title: 'DSA II Lab', credits: 1, trimester: 5, aliases: [] },
-            { code: 'SOC 2101', title: 'Society, Environment and Engineering Ethic', credits: 3, trimester: 5, aliases: [] },
-            { code: 'MATH 2205', title: 'Prob & Stats', credits: 3, trimester: 5, aliases: ['Probability & Statistics'] },
+            { code: 'MATH 2205', title: 'Probability and Statistics', credits: 3, trimester: 5, aliases: ['Prob & Stats'] },
+            { code: 'SOC 2101', title: 'Society, Technology and Engineering Ethics', credits: 3, trimester: 5, aliases: ['Society, Environment and Engineering Ethic'] },
+            { code: 'CSE 2217', title: 'Data Structure and Algorithms II', credits: 3, trimester: 5, aliases: ['DSA II', 'Data Structures & Algo II'] },
+            { code: 'CSE 2218', title: 'Data Structure and Algorithms II Laboratory', credits: 1, trimester: 5, aliases: ['DSA II Lab'] },
             { code: 'EEE 2113', title: 'Electrical Circuits', credits: 3, trimester: 5, aliases: [] },
             // Trimester 6
             { code: 'CSE 3521', title: 'Database Management Systems', credits: 3, trimester: 6, aliases: ['DBMS', 'Database'] },
-            { code: 'CSE 3522', title: 'DBMS Lab', credits: 1, trimester: 6, aliases: ['Database Management Systems Lab'] },
+            { code: 'CSE 3522', title: 'Database Management Systems Lab', credits: 1, trimester: 6, aliases: ['DBMS Lab'] },
             { code: 'EEE 2123', title: 'Electronics', credits: 3, trimester: 6, aliases: [] },
             { code: 'EEE 2124', title: 'Electronics Lab', credits: 1, trimester: 6, aliases: [] },
             { code: 'CSE 4165', title: 'Web Programming', credits: 3, trimester: 6, aliases: ['Web Dev'] },
             // Trimester 7
             { code: 'CSE 3313', title: 'Computer Architecture', credits: 3, trimester: 7, aliases: ['CA', 'Comp Arch'] },
-            { code: 'CSE 2118', title: 'AOOP Lab', credits: 1, trimester: 7, aliases: ['Advanced OOP Lab'] },
-            { code: 'CSE 3411', title: 'System Analysis and Design', credits: 3, trimester: 7, aliases: ['SAD'] },
-            { code: 'CSE 3412', title: 'SAD Lab', credits: 1, trimester: 7, aliases: ['System Analysis and Design Lab'] },
+            { code: 'CSE 2118', title: 'Advanced Object Oriented Programming Lab', credits: 1, trimester: 7, aliases: ['AOOP Lab'] },
             { code: 'BIO 3105', title: 'Biology for Engineers', credits: 3, trimester: 7, aliases: [] },
+            { code: 'CSE 3411', title: 'System Analysis and Design', credits: 3, trimester: 7, aliases: ['SAD'] },
+            { code: 'CSE 3412', title: 'System Analysis and Design Lab', credits: 1, trimester: 7, aliases: ['SAD Lab'] },
             // Trimester 8
-            { code: 'CSE 4325', title: 'Microprocessors', credits: 3, trimester: 8, aliases: ['Micro'] },
-            { code: 'CSE 4326', title: 'Microprocessors Lab', credits: 1, trimester: 8, aliases: ['Micro Lab'] },
+            { code: 'CSE 4325', title: 'Microprocessors and Microcontrollers', credits: 3, trimester: 8, aliases: ['Microprocessors', 'Micro'] },
+            { code: 'CSE 4326', title: 'Microprocessors and Microcontrollers Lab', credits: 1, trimester: 8, aliases: ['Microprocessors Lab', 'Micro Lab'] },
             { code: 'CSE 3421', title: 'Software Engineering', credits: 3, trimester: 8, aliases: ['SE'] },
             { code: 'CSE 3422', title: 'Software Engineering Lab', credits: 1, trimester: 8, aliases: ['SE Lab'] },
             { code: 'CSE 3811', title: 'Artificial Intelligence', credits: 3, trimester: 8, aliases: ['AI'] },
-            { code: 'CSE 3812', title: 'AI Lab', credits: 1, trimester: 8, aliases: ['Artificial Intelligence Lab'] },
+            { code: 'CSE 3812', title: 'Artificial Intelligence Lab', credits: 1, trimester: 8, aliases: ['AI Lab'] },
             // Trimester 9
             { code: 'CSE 2233', title: 'Theory of Computation', credits: 3, trimester: 9, aliases: ['TOC'] },
-            { code: 'PMG 4101', title: 'Project Management', credits: 3, trimester: 9, aliases: [] },
             { code: 'GED OPT1', title: 'General Education Optional-I', credits: 3, trimester: 9, aliases: [] },
+            { code: 'PMG 4101', title: 'Project Management', credits: 3, trimester: 9, aliases: [] },
             { code: 'CSE 3711', title: 'Computer Networks', credits: 3, trimester: 9, aliases: ['CN', 'Networking'] },
-            { code: 'CSE 3712', title: 'CN Lab', credits: 1, trimester: 9, aliases: ['Computer Networks Lab'] },
+            { code: 'CSE 3712', title: 'Computer Networks Lab', credits: 1, trimester: 9, aliases: ['CN Lab'] },
             // Trimester 10
-            { code: 'CSE 4509', title: 'Operating Systems', credits: 3, trimester: 10, aliases: ['OS'] },
-            { code: 'CSE 4510', title: 'OS Lab', credits: 1, trimester: 10, aliases: ['Operating Systems Lab'] },
-            { code: 'CSE 4000A', title: 'FYP Part 1', credits: 2, trimester: 10, aliases: ['Final Year Project I'] },
             { code: 'GED OPT2', title: 'General Education Optional-II', credits: 3, trimester: 10, aliases: [] },
+            { code: 'CSE 4000 A', title: 'Final Year Design Project - I', credits: 2, trimester: 10, aliases: ['CSE 4000A', 'FYP Part 1', 'FYP I'] },
+            { code: 'Elective I', title: 'Major Elective', credits: 3, trimester: 10, aliases: [] },
+            { code: 'CSE 4509', title: 'Operating Systems', credits: 3, trimester: 10, aliases: ['OS'] },
+            { code: 'CSE 4510', title: 'Operating Systems Laboratory', credits: 1, trimester: 10, aliases: ['OS Lab'] },
             // Trimester 11
-            { code: 'CSE 4531', title: 'Computer Security', credits: 3, trimester: 11, aliases: ['Security', 'Cyber Security'] },
-            { code: 'CSE 4000B', title: 'FYP Part 2', credits: 2, trimester: 11, aliases: ['Final Year Project II'] },
             { code: 'GED OPT3', title: 'General Education Optional-III', credits: 3, trimester: 11, aliases: [] },
+            { code: 'Elective II', title: 'Major Elective', credits: 3, trimester: 11, aliases: [] },
+            { code: 'Elective III', title: 'Major Elective', credits: 3, trimester: 11, aliases: [] },
+            { code: 'CSE 4000 B', title: 'Final Year Design Project - II', credits: 2, trimester: 11, aliases: ['CSE 4000B', 'FYP Part 2', 'FYP II'] },
+            { code: 'CSE 4531', title: 'Computer Security', credits: 3, trimester: 11, aliases: ['Security', 'Cyber Security'] },
             // Trimester 12
+            { code: 'CSE 4000 C', title: 'Final Year Design Project - III', credits: 2, trimester: 12, aliases: ['CSE 4000C', 'FYP Part 3', 'FYP III'] },
             { code: 'EEE 4261', title: 'Green Computing', credits: 3, trimester: 12, aliases: [] },
-            { code: 'CSE 4000C', title: 'FYP Part 3', credits: 2, trimester: 12, aliases: ['Final Year Project III'] },
+            { code: 'Elective IV', title: 'Major Elective', credits: 3, trimester: 12, aliases: [] },
+            { code: 'Elective V', title: 'Major Elective', credits: 3, trimester: 12, aliases: [] },
+
+            // General Education Courses (trimester 0 = elective / general education)
+            { code: 'GED 1005', title: 'AI Literacy and Prompt Engineering', credits: 3, trimester: 0, aliases: ['AI Literacy'], track: 'General Education' },
+            { code: 'ECO 4101', title: 'Economics', credits: 3, trimester: 0, aliases: [], track: 'General Education' },
+            { code: 'ACT 2111', title: 'Financial and Managerial Accounting', credits: 3, trimester: 0, aliases: ['Accounting'], track: 'General Education' },
+            { code: 'TEC 2499', title: 'Technology Entrepreneurship', credits: 3, trimester: 0, aliases: ['Entrepreneurship'], track: 'General Education' },
+
             // Elective Tracks (trimester 0 = elective)
-            { code: 'CSE 4601', title: 'Mathematical Analysis for Computer Science', credits: 3, trimester: 0, aliases: [], track: 'Computational Theory' },
-            { code: 'CSE 4633', title: 'Basic Graph Theory', credits: 3, trimester: 0, aliases: [], track: 'Computational Theory' },
-            { code: 'CSE 4655', title: 'Algorithm Engineering', credits: 3, trimester: 0, aliases: [], track: 'Computational Theory' },
-            { code: 'CSE 4611', title: 'Compiler Design', credits: 3, trimester: 0, aliases: [], track: 'Computational Theory' },
-            { code: 'CSE 4613', title: 'Computational Geometry', credits: 3, trimester: 0, aliases: [], track: 'Computational Theory' },
-            { code: 'CSE 4621', title: 'Computer Graphics', credits: 3, trimester: 0, aliases: ['CG'], track: 'Computational Theory' },
-            { code: 'CSE 3715', title: 'Data Communication', credits: 3, trimester: 0, aliases: [], track: 'Network and Communications' },
-            { code: 'CSE 4759', title: 'Wireless and Cellular Communication', credits: 3, trimester: 0, aliases: [], track: 'Network and Communications' },
-            { code: 'CSE 4793', title: 'Advanced Network Services and Management', credits: 3, trimester: 0, aliases: [], track: 'Network and Communications' },
-            { code: 'CSE 4783', title: 'Cryptography', credits: 3, trimester: 0, aliases: [], track: 'Network and Communications' },
-            { code: 'CSE 4777', title: 'Networks Security', credits: 3, trimester: 0, aliases: [], track: 'Network and Communications' },
-            { code: 'CSE 4763', title: 'Electronic Business', credits: 3, trimester: 0, aliases: [], track: 'Network and Communications' },
-            { code: 'CSE 4547', title: 'Multimedia Systems Design', credits: 3, trimester: 0, aliases: [], track: 'Systems' },
-            { code: 'CSE 4519', title: 'Distributed Systems', credits: 3, trimester: 0, aliases: [], track: 'Systems' },
-            { code: 'CSE 4523', title: 'Simulation and Modeling', credits: 3, trimester: 0, aliases: [], track: 'Systems' },
-            { code: 'CSE 4521', title: 'Computer Graphics', credits: 3, trimester: 0, aliases: ['CG'], track: 'Systems' },
-            { code: 'CSE 4587', title: 'Cloud Computing', credits: 3, trimester: 0, aliases: [], track: 'Systems' },
-            { code: 'CSE 4567', title: 'Advanced Database Management Systems', credits: 3, trimester: 0, aliases: ['ADBMS'], track: 'Systems' },
-            { code: 'CSE 4889', title: 'Machine Learning', credits: 3, trimester: 0, aliases: ['ML'], track: 'Data Science' },
-            { code: 'CSE 4891', title: 'Data Mining', credits: 3, trimester: 0, aliases: [], track: 'Data Science' },
-            { code: 'CSE 4893', title: 'Introduction to Bioinformatics', credits: 3, trimester: 0, aliases: [], track: 'Data Science' },
-            { code: 'CSE 4883', title: 'Digital Image Processing', credits: 3, trimester: 0, aliases: ['DIP'], track: 'Data Science' },
-            { code: 'CSE 4817', title: 'Big Data Analytics', credits: 3, trimester: 0, aliases: [], track: 'Data Science' },
-            { code: 'CSE 4941', title: 'Enterprise Systems: Concepts and Practice', credits: 3, trimester: 0, aliases: [], track: 'ICT' },
-            { code: 'CSE 4943', title: 'Web Application Security', credits: 3, trimester: 0, aliases: [], track: 'ICT' },
-            { code: 'CSE 4463', title: 'Electronic Business', credits: 3, trimester: 0, aliases: [], track: 'ICT' },
-            { code: 'CSE 4181', title: 'Mobile Application Development', credits: 3, trimester: 0, aliases: ['MAD'], track: 'ICT' },
-            { code: 'CSE 4945', title: 'UI: Concepts and Design', credits: 3, trimester: 0, aliases: [], track: 'ICT' },
-            { code: 'CSE 4949', title: 'IT Audit: Concepts and Practice', credits: 3, trimester: 0, aliases: [], track: 'ICT' },
-            { code: 'CSE 4495', title: 'Software Testing and Quality Assurance', credits: 3, trimester: 0, aliases: ['STQA'], track: 'ICT' },
-            { code: 'CSE 4451', title: 'Human Computer Interaction', credits: 3, trimester: 0, aliases: ['HCI'], track: 'Software Engineering' },
+            // Network and Cyber Security
+            { code: 'CSE 4125', title: 'Ethical Hacking and Network Defense', credits: 3, trimester: 0, aliases: ['Ethical Hacking'], track: 'Network and Cyber Security' },
+            { code: 'CSE 4777', title: 'Network Security', credits: 3, trimester: 0, aliases: ['Networks Security'], track: 'Network and Cyber Security' },
+
+            // Software Engineering
+            { code: 'CSE 4587', title: 'Cloud Computing', credits: 3, trimester: 0, aliases: [], track: 'Software Engineering' },
+            { code: 'CSE 4611', title: 'Compiler Design', credits: 3, trimester: 0, aliases: [], track: 'Software Engineering' },
+            { code: 'CSE 4621', title: 'Computer Graphics', credits: 3, trimester: 0, aliases: ['CG'], track: 'Software Engineering' },
+            { code: 'CSE 4451', title: 'Human Computer Interaction', credits: 3, trimester: 0, aliases: ['HCI'], track: 'Software Engineering / Business System Engineering' },
             { code: 'CSE 4435', title: 'Software Architecture', credits: 3, trimester: 0, aliases: [], track: 'Software Engineering' },
-            { code: 'CSE 4485', title: 'Game Design and Development', credits: 3, trimester: 0, aliases: [], track: 'Software Engineering' },
-            { code: 'CSE 4329', title: 'Digital System Design', credits: 3, trimester: 0, aliases: [], track: 'Hardware' },
-            { code: 'CSE 4379', title: 'Real-time Embedded Systems', credits: 3, trimester: 0, aliases: [], track: 'Hardware' },
-            { code: 'CSE 4327', title: 'VLSI Design', credits: 3, trimester: 0, aliases: [], track: 'Hardware' },
-            { code: 'CSE 4337', title: 'Robotics', credits: 3, trimester: 0, aliases: [], track: 'Hardware' },
-            { code: 'CSE 4397', title: 'Interfacing', credits: 3, trimester: 0, aliases: [], track: 'Hardware' },
+            { code: 'CSE 4181', title: 'Mobile Application Development', credits: 3, trimester: 0, aliases: ['MAD'], track: 'Software Engineering' },
+            { code: 'CSE 4945', title: 'UI: Concepts and Design', credits: 3, trimester: 0, aliases: ['UI Design'], track: 'Software Engineering / Business System Engineering' },
+            { code: 'CSE 4495', title: 'Software Testing and Quality Assurance', credits: 3, trimester: 0, aliases: ['STQA'], track: 'Software Engineering' },
+
+            // Embedded System and Robotics / Hardware
+            { code: 'CSE 4327', title: 'VLSI Design', credits: 3, trimester: 0, aliases: ['VLSI'], track: 'Embedded System and Robotics / Hardware' },
+            { code: 'CSE 4399', title: 'Embedded Machine Learning (Special Topics)', credits: 3, trimester: 0, aliases: ['Embedded ML'], track: 'Embedded System and Robotics / Hardware' },
+
+            // AI and Data Science
+            { code: 'CSE 4889', title: 'Machine Learning', credits: 3, trimester: 0, aliases: ['ML'], track: 'AI and Data Science' },
+            { code: 'CSE 4891', title: 'Data Mining', credits: 3, trimester: 0, aliases: [], track: 'AI and Data Science / Business System Engineering' },
+            { code: 'CSE 4817', title: 'Big Data Analytics', credits: 3, trimester: 0, aliases: ['BDA'], track: 'AI and Data Science / Business System Engineering' },
+            { code: 'CSE 4883', title: 'Digital Image Processing', credits: 3, trimester: 0, aliases: ['DIP'], track: 'AI and Data Science' },
+            { code: 'CSE 4811', title: 'Natural Language Processing', credits: 3, trimester: 0, aliases: ['NLP'], track: 'AI and Data Science' },
+            { code: 'CSE 4813', title: 'Deep Learning', credits: 3, trimester: 0, aliases: ['DL'], track: 'AI and Data Science' },
+            { code: 'CSE 4893', title: 'Introduction to Bioinformatics', credits: 3, trimester: 0, aliases: ['Bioinformatics'], track: 'AI and Data Science' },
+
+            // Business System Engineering
+            { code: 'CSE 4133', title: 'Business Intelligence', credits: 3, trimester: 0, aliases: ['BI'], track: 'Business System Engineering' },
+
+            // Legacy / Additional Electives (for compatibility with existing question papers)
+            { code: 'CSE 4601', title: 'Mathematical Analysis for Computer Science', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4633', title: 'Basic Graph Theory', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4655', title: 'Algorithm Engineering', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4613', title: 'Computational Geometry', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 3715', title: 'Data Communication', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4759', title: 'Wireless and Cellular Communication', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4793', title: 'Advanced Network Services and Management', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4783', title: 'Cryptography', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4763', title: 'Electronic Business', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4547', title: 'Multimedia Systems Design', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4519', title: 'Distributed Systems', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4523', title: 'Simulation and Modeling', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4567', title: 'Advanced Database Management Systems', credits: 3, trimester: 0, aliases: ['ADBMS'], track: 'Other Electives' },
+            { code: 'CSE 4941', title: 'Enterprise Systems: Concepts and Practice', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4943', title: 'Web Application Security', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4949', title: 'IT Audit: Concepts and Practice', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4485', title: 'Game Design and Development', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4329', title: 'Digital System Design', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4379', title: 'Real-time Embedded Systems', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4337', title: 'Robotics', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' },
+            { code: 'CSE 4397', title: 'Interfacing', credits: 3, trimester: 0, aliases: [], track: 'Other Electives' }
         ];
+
+        function isLabCourse(courseOrCode) {
+            if (!courseOrCode) return false;
+            let course = courseOrCode;
+            if (typeof courseOrCode === 'string') {
+                const clean = courseOrCode.replace(/\s+/g, '').toUpperCase();
+                course = CURRICULUM.find(c => c.code.replace(/\s+/g, '').toUpperCase() === clean);
+                if (!course) {
+                    const low = courseOrCode.toLowerCase();
+                    return low.includes('lab') || low.includes('laboratory');
+                }
+            }
+            if (Number(course.credits) === 1 || course.credits === 1.0 || course.cr === 1 || course.cr === 1.0) return true;
+            const title = (course.title || course.courseName || '').toLowerCase();
+            return title.includes('laboratory') || title.includes(' lab') || title.endsWith('lab');
+        }
 
         let currentUser = null;
         let allSubmissions = [];
@@ -3879,6 +3920,7 @@
                 }
                 adminUploadModal.classList.add('active');
                 document.body.style.overflow = 'hidden';
+                if (typeof updateAdminFacultyRequirementUI === 'function') updateAdminFacultyRequirementUI();
             }
         };
 
@@ -3893,6 +3935,26 @@
         if (sidebarUploadBtn) sidebarUploadBtn.addEventListener('click', openAdminUploadModal);
         if (closeAdminUploadBtn) closeAdminUploadBtn.addEventListener('click', closeAdminUploadModal);
         if (cancelAdminUploadBtn) cancelAdminUploadBtn.addEventListener('click', closeAdminUploadModal);
+
+        function updateAdminFacultyRequirementUI() {
+            const courseCode = document.getElementById('adminUpCourse')?.value || (document.getElementById('adminUpCourseSearch')?.value || '').split('-')[0].trim();
+            const isLab = isLabCourse(courseCode);
+            const facultyLbl = document.getElementById('adminFacultyLabel');
+            const facultySearch = document.getElementById('adminUpFacultySearch');
+            const matType = document.getElementById('adminUpType')?.value || 'Question';
+            if (!facultyLbl) return;
+
+            if (isLab) {
+                facultyLbl.innerHTML = 'Faculty Member <span style="color:var(--danger); font-weight:700;">* (Strictly Required for Lab Course)</span>';
+                if (facultySearch) facultySearch.placeholder = 'Search & select faculty (REQUIRED for Lab course)...';
+            } else if (matType === 'Notes') {
+                facultyLbl.innerHTML = 'Faculty Member <span style="color:var(--warning); font-weight:600;">(Recommended for Notes)</span>';
+                if (facultySearch) facultySearch.placeholder = 'Search faculty name or initial (e.g., AnHq, Anindya)...';
+            } else {
+                facultyLbl.innerHTML = 'Faculty Member <span style="color:var(--text-muted); font-weight:normal;">(Optional)</span>';
+                if (facultySearch) facultySearch.placeholder = 'Search faculty name or initial (e.g., AnHq, Anindya)...';
+            }
+        }
 
         // Admin Course Autocomplete
         const adminCourseSearch = document.getElementById('adminUpCourseSearch');
@@ -3921,7 +3983,13 @@
             };
 
             adminCourseSearch.addEventListener('focus', () => renderAdminCourseResults(adminCourseSearch.value));
-            adminCourseSearch.addEventListener('input', () => renderAdminCourseResults(adminCourseSearch.value));
+            adminCourseSearch.addEventListener('input', () => {
+                renderAdminCourseResults(adminCourseSearch.value);
+                updateAdminFacultyRequirementUI();
+            });
+            adminCourseSearch.addEventListener('change', () => {
+                updateAdminFacultyRequirementUI();
+            });
 
             adminCourseResults.addEventListener('click', (e) => {
                 const item = e.target.closest('.admin-course-item');
@@ -3934,6 +4002,7 @@
                 adminCourseResults.style.display = 'none';
                 const triSel = document.getElementById('adminUpTrimester');
                 if (triSel && trim) triSel.value = trim;
+                updateAdminFacultyRequirementUI();
             });
 
             document.addEventListener('click', (e) => {
@@ -4116,7 +4185,6 @@
                 const topicLbl = document.getElementById('adminTopicLabel');
                 const mainLbl = document.getElementById('adminMainFileLabel');
                 const topicInp = document.getElementById('adminUpTopic');
-                const facultyLbl = document.getElementById('adminFacultyLabel');
 
                 if (examGrp) examGrp.style.display = (val === 'Question' || val === 'Solution') ? 'block' : 'none';
                 if (solGrp) solGrp.style.display = val === 'Question' ? 'block' : 'none';
@@ -4144,11 +4212,7 @@
                     }
                 }
 
-                if (facultyLbl) {
-                    facultyLbl.innerHTML = (val === 'Lab' || val === 'Notes') 
-                        ? 'Faculty Name / Initial <span style="color:var(--warning); font-weight:600;">(Recommended for Lab / Notes)</span>'
-                        : 'Faculty Name / Initial <span style="color:var(--text-muted); font-weight:normal;">(Optional)</span>';
-                }
+                updateAdminFacultyRequirementUI();
             });
         }
 
@@ -4167,20 +4231,26 @@
                     const courseCode = document.getElementById('adminUpCourse').value || courseCodeInput;
                     if (!courseCode) throw new Error('Please select a valid course code.');
                     const course = CURRICULUM.find(c => c.code.toLowerCase().replace(/\s+/g, '') === courseCode.toLowerCase().replace(/\s+/g, '')) || { title: courseCode };
+                    const isLab = isLabCourse(course);
 
                     const materialType = document.getElementById('adminUpType').value;
                     const semester = document.getElementById('adminUpSemester').value;
                     const trimester = parseInt(document.getElementById('adminUpTrimester').value, 10);
-                    const examType = (materialType === 'Question' || materialType === 'Solution') ? document.getElementById('adminUpExamType').value : (materialType === 'Lab' ? 'Lab' : 'Notes');
+                    const examType = (materialType === 'Question' || materialType === 'Solution') ? document.getElementById('adminUpExamType').value : 'Notes';
                     const topic = document.getElementById('adminUpTopic').value.trim();
                     const facultyId = document.getElementById('adminUpFacultyId')?.value ? Number(document.getElementById('adminUpFacultyId').value) : null;
                     const facultyName = (document.getElementById('adminUpFacultyName')?.value || document.getElementById('adminUpFacultySearch')?.value || '').trim();
                     const facultyCode = (document.getElementById('adminUpFacultyCode')?.value || '').trim();
-                    const searchTokens = buildSearchTokens(courseCode, course.title, topic, facultyName, facultyCode);
+
+                    if (isLab && !facultyName && !facultyId) {
+                        throw new Error('Faculty selection is strictly required for Lab courses (1 credit). Please select a faculty member.');
+                    }
 
                     if (materialType === 'Notes' && !topic) {
                         throw new Error('Please enter a Topic / Title for Lecture Notes.');
                     }
+
+                    const searchTokens = buildSearchTokens(courseCode, course.title, topic, facultyName, facultyCode);
 
                     const mainFile = document.getElementById('adminUpMainFile').files[0];
                     const solFile = document.getElementById('adminUpSolFile')?.files[0];
@@ -4188,11 +4258,11 @@
                     if (!mainFile) throw new Error('Please attach a main file.');
 
                     // Strictly forbid duplicate question papers for same course + exam + semester (Midterm / Final only)
-                    if ((materialType === 'Question' || materialType === 'Lab') && (examType.toLowerCase() === 'midterm' || examType.toLowerCase() === 'final')) {
+                    if (materialType === 'Question' && (examType.toLowerCase() === 'midterm' || examType.toLowerCase() === 'final')) {
                         const cleanCourse = courseCode.replace(/\s+/g, '').toUpperCase();
                         const isDuplicate = allSubmissions.some(p => {
                             const pType = (p.type || p.materialType || 'Question').toLowerCase();
-                            if (pType !== materialType.toLowerCase() && pType !== 'question') return false;
+                            if (pType !== 'question') return false;
                             
                             const pCourse = (p.courseCode || '').replace(/\s+/g, '').toUpperCase();
                             const pExam = (p.examType || '').toLowerCase();
@@ -4227,6 +4297,8 @@
                     const newDocRef = await addDoc(collection(db, QUESTION_COLLECTION), {
                         courseCode: courseCode.replace(/\s+/g, ' ').toUpperCase(),
                         courseName: course.title,
+                        credits: Number(course.credits) || Number(course.cr) || (isLab ? 1 : 3),
+                        isLab: isLab,
                         semester,
                         trimester,
                         type: materialType,
@@ -4671,7 +4743,7 @@
                     examType = 'Quiz';
                 } else if (/\b(?:lab[-_ ]?final|lab[-_ ]?mid|lab[-_ ]?exam|lab[-_ ]?task|lab)\b/i.test(fullText)) {
                     examType = 'Lab';
-                    materialType = 'Lab';
+                    materialType = 'Question';
                 } else if (/\b(?:notes?|lecture[-_ ]?notes?|summary|slides?)\b/i.test(fullText)) {
                     examType = 'Notes';
                     materialType = 'Notes';
@@ -4679,7 +4751,7 @@
                     examType = 'Assignment';
                 }
             } else {
-                if (examType === 'Lab') materialType = 'Lab';
+                if (examType === 'Lab') materialType = 'Question';
                 if (examType === 'Notes') materialType = 'Notes';
             }
 
@@ -4719,8 +4791,8 @@
             let topic = '';
             if (materialType === 'Question') {
                 topic = `${examType} Question ${semester ? decodeSemester(semester) : ''}`.trim();
-            } else if (materialType === 'Lab') {
-                topic = `Lab Material ${semester ? decodeSemester(semester) : ''}`.trim();
+            } else if (materialType === 'Solution') {
+                topic = `${examType} Solution ${semester ? decodeSemester(semester) : ''}`.trim();
             } else {
                 topic = `Lecture Notes ${detectedCourse ? detectedCourse.code : ''}`.trim();
             }
@@ -4918,7 +4990,7 @@
                 `).join('');
 
                 // Type options
-                const typeOpts = ['Question', 'Solution', 'Lab', 'Notes'].map(t => `
+                const typeOpts = ['Question', 'Solution', 'Notes'].map(t => `
                     <option value="${t}" ${t === item.materialType ? 'selected' : ''}>${t}</option>
                 `).join('');
 
@@ -5155,17 +5227,13 @@
                 if (!targetExam) return;
                 parsedZipEntries.forEach(item => {
                     item.examType = targetExam;
-                    if (targetExam === 'Lab') {
-                        item.materialType = 'Lab';
-                    } else if (targetExam === 'Notes') {
+                    if (targetExam === 'Notes') {
                         item.materialType = 'Notes';
                     } else {
                         item.materialType = 'Question';
                     }
                     if (item.materialType === 'Question') {
                         item.topic = `${targetExam} Question ${item.semester ? decodeSemester(item.semester) : ''}`.trim();
-                    } else if (item.materialType === 'Lab') {
-                        item.topic = `Lab Material ${item.semester ? decodeSemester(item.semester) : ''}`.trim();
                     } else {
                         item.topic = `Lecture Notes ${item.courseCode || ''}`.trim();
                     }
