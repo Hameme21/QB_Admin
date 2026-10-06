@@ -1978,6 +1978,9 @@
                                     <option value="Assignment">Assignment</option>
                                     <option value="Lab">Lab</option>
                                     <option value="Class Test">Class Test</option>
+                                    <option value="Faculty's Notes">Faculty's Notes</option>
+                                    <option value="University's Notes">University's Notes</option>
+                                    <option value="Notes">Notes</option>
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
@@ -2133,6 +2136,13 @@
                                 <option value="Assignment">Assignment</option>
                             </select>
                         </div>
+                        <div class="form-group" id="adminNoteTypeGroup" style="display:none;">
+                            <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Note Category</label>
+                            <select id="adminUpNoteType" class="input-control">
+                                <option value="faculty">Faculty's Notes (Created by faculty)</option>
+                                <option value="university">University's Notes (Centrally provided by university)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="form-group" style="margin-bottom:0.75rem;">
@@ -2278,6 +2288,8 @@
                                 <option value="Assignment">Assignment</option>
                                 <option value="Lab">Lab</option>
                                 <option value="Notes">Notes</option>
+                                <option value="Faculty's Notes">Faculty's Notes</option>
+                                <option value="University's Notes">University's Notes</option>
                             </select>
                             <button type="button" class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.75rem;" id="btn-batch-apply-exam">Apply Exam Type to All</button>
                         </div>
@@ -3685,6 +3697,18 @@
                 const facultyCode = facultyObj ? facultyObj.code : '';
                 const searchTokens = buildSearchTokens(courseCode, getCourseTitle(courseCode), topic, facultyName, facultyCode);
 
+                let noteCat = null;
+                let noteTypeName = null;
+                if (materialType.toLowerCase() === 'notes' || examType === "Faculty's Notes" || examType === "University's Notes") {
+                    if (examType === "University's Notes") {
+                        noteCat = 'university';
+                        noteTypeName = "University's Notes";
+                    } else {
+                        noteCat = 'faculty';
+                        noteTypeName = "Faculty's Notes";
+                    }
+                }
+
                 const updateData = { 
                     submitterName, 
                     courseCode, 
@@ -3693,6 +3717,9 @@
                     trimester, 
                     materialType: materialType.toLowerCase(), 
                     examType, 
+                    noteCategory: noteCat,
+                    noteType: noteCat,
+                    noteTypeName,
                     topic,
                     facultyId,
                     facultyName,
@@ -4787,6 +4814,8 @@
 
                 if (examGrp) examGrp.style.display = (val === 'Question' || val === 'Solution') ? 'block' : 'none';
                 if (solGrp) solGrp.style.display = val === 'Question' ? 'block' : 'none';
+                const noteGrp = document.getElementById('adminNoteTypeGroup');
+                if (noteGrp) noteGrp.style.display = val === 'Notes' ? 'block' : 'none';
                 
                 if (mainLbl) {
                     if (val === 'Solution') {
@@ -4838,7 +4867,13 @@
                     const materialType = document.getElementById('adminUpType').value;
                     const semester = document.getElementById('adminUpSemester').value;
                     const trimester = parseInt(document.getElementById('adminUpTrimester').value, 10);
-                    const examType = (materialType === 'Question' || materialType === 'Solution') ? document.getElementById('adminUpExamType').value : 'Notes';
+                    let noteCategory = null;
+                    let noteTypeName = null;
+                    if (materialType === 'Notes') {
+                        noteCategory = document.getElementById('adminUpNoteType')?.value || 'faculty';
+                        noteTypeName = (noteCategory === 'university') ? "University's Notes" : "Faculty's Notes";
+                    }
+                    const examType = (materialType === 'Question' || materialType === 'Solution') ? document.getElementById('adminUpExamType').value : (noteTypeName || 'Notes');
                     const topic = document.getElementById('adminUpTopic').value.trim();
                     const facultyId = document.getElementById('adminUpFacultyId')?.value ? Number(document.getElementById('adminUpFacultyId').value) : null;
                     const facultyName = (document.getElementById('adminUpFacultyName')?.value || document.getElementById('adminUpFacultySearch')?.value || '').trim();
@@ -4913,6 +4948,9 @@
                         type: materialType,
                         materialType: materialType === 'Solution' ? 'solution' : materialType,
                         examType,
+                        noteCategory,
+                        noteType: noteCategory,
+                        noteTypeName,
                         topic: topic || (materialType === 'Solution' ? `${examType} Solution ${courseCode}` : `${examType} ${courseCode}`),
                         facultyId: facultyId || null,
                         facultyName: facultyName || '',
@@ -5355,15 +5393,38 @@
                 } else if (/\b(?:lab[-_ ]?final|lab[-_ ]?mid|lab[-_ ]?exam|lab[-_ ]?task|lab)\b/i.test(fullText)) {
                     examType = 'Lab';
                     materialType = 'Question';
+                } else if (/\b(?:uni(?:versity)?[-_ ]?notes?|central[-_ ]?notes?|uiu[-_ ]?notes?)\b/i.test(fullText)) {
+                    examType = "University's Notes";
+                    materialType = 'Notes';
+                } else if (/\b(?:faculty[-_ ]?notes?|teacher[-_ ]?notes?)\b/i.test(fullText)) {
+                    examType = "Faculty's Notes";
+                    materialType = 'Notes';
                 } else if (/\b(?:notes?|lecture[-_ ]?notes?|summary|slides?)\b/i.test(fullText)) {
-                    examType = 'Notes';
+                    examType = /\b(?:uni|university|central)\b/i.test(fullText) ? "University's Notes" : "Faculty's Notes";
                     materialType = 'Notes';
                 } else if (/\b(?:assignment[-_ ]?\d*|hw[-_ ]?\d*)\b/i.test(fullText)) {
                     examType = 'Assignment';
                 }
             } else {
                 if (examType === 'Lab') materialType = 'Question';
-                if (examType === 'Notes') materialType = 'Notes';
+                if (examType === 'Notes') {
+                    materialType = 'Notes';
+                    examType = /\b(?:uni|university|central)\b/i.test(fullText) ? "University's Notes" : "Faculty's Notes";
+                }
+            }
+
+            let noteCategory = null;
+            let noteTypeName = null;
+            if (materialType === 'Notes') {
+                if (examType === "University's Notes" || /\b(?:uni|university|central)\b/i.test(fullText)) {
+                    noteCategory = 'university';
+                    noteTypeName = "University's Notes";
+                    examType = "University's Notes";
+                } else {
+                    noteCategory = 'faculty';
+                    noteTypeName = "Faculty's Notes";
+                    examType = "Faculty's Notes";
+                }
             }
 
             // Semester detection fallback: supports 151, 162, 171, 172, 183, 241, 251, etc.
@@ -5405,7 +5466,7 @@
             } else if (materialType === 'Solution') {
                 topic = `${examType} Solution ${semester ? decodeSemester(semester) : ''}`.trim();
             } else {
-                topic = `Lecture Notes ${detectedCourse ? detectedCourse.code : ''}`.trim();
+                topic = `${noteTypeName || examType} ${detectedCourse ? detectedCourse.code : ''}`.trim();
             }
 
             return {
@@ -5414,6 +5475,8 @@
                 courseName: detectedCourse ? detectedCourse.title : '',
                 examType,
                 materialType,
+                noteCategory,
+                noteTypeName,
                 semester,
                 trimester,
                 topic,
@@ -5596,7 +5659,7 @@
                 `).join('');
 
                 // Exam options
-                const examOpts = ['Midterm', 'Final', 'Quiz 1', 'Quiz 2', 'Quiz 3', 'Quiz 4', 'Quiz', 'Assignment', 'Lab', 'Notes'].map(e => `
+                const examOpts = ['Midterm', 'Final', 'Quiz 1', 'Quiz 2', 'Quiz 3', 'Quiz 4', 'Quiz', 'Assignment', 'Lab', "Faculty's Notes", "University's Notes"].map(e => `
                     <option value="${e}" ${e === item.examType ? 'selected' : ''}>${e}</option>
                 `).join('');
 
@@ -5706,7 +5769,19 @@
                     const idx = parseInt(e.target.dataset.index, 10);
                     if (parsedZipEntries[idx]) {
                         parsedZipEntries[idx].examType = e.target.value;
-                        parsedZipEntries[idx].topic = `${e.target.value} Question ${parsedZipEntries[idx].semester ? decodeSemester(parsedZipEntries[idx].semester) : ''}`.trim();
+                        if (e.target.value === "University's Notes") {
+                            parsedZipEntries[idx].materialType = 'Notes';
+                            parsedZipEntries[idx].noteCategory = 'university';
+                            parsedZipEntries[idx].noteTypeName = "University's Notes";
+                            parsedZipEntries[idx].topic = `University's Notes ${parsedZipEntries[idx].courseCode || ''}`.trim();
+                        } else if (e.target.value === "Faculty's Notes" || e.target.value === 'Notes') {
+                            parsedZipEntries[idx].materialType = 'Notes';
+                            parsedZipEntries[idx].noteCategory = 'faculty';
+                            parsedZipEntries[idx].noteTypeName = "Faculty's Notes";
+                            parsedZipEntries[idx].topic = `Faculty's Notes ${parsedZipEntries[idx].courseCode || ''}`.trim();
+                        } else {
+                            parsedZipEntries[idx].topic = `${e.target.value} Question ${parsedZipEntries[idx].semester ? decodeSemester(parsedZipEntries[idx].semester) : ''}`.trim();
+                        }
                         renderZipParsedTable();
                     }
                 });
@@ -5838,19 +5913,25 @@
                 if (!targetExam) return;
                 parsedZipEntries.forEach(item => {
                     item.examType = targetExam;
-                    if (targetExam === 'Notes') {
+                    if (targetExam === "University's Notes") {
                         item.materialType = 'Notes';
+                        item.noteCategory = 'university';
+                        item.noteTypeName = "University's Notes";
+                        item.topic = `University's Notes ${item.courseCode || ''}`.trim();
+                    } else if (targetExam === "Faculty's Notes" || targetExam === 'Notes') {
+                        item.materialType = 'Notes';
+                        item.noteCategory = 'faculty';
+                        item.noteTypeName = "Faculty's Notes";
+                        item.topic = `Faculty's Notes ${item.courseCode || ''}`.trim();
                     } else {
                         item.materialType = 'Question';
-                    }
-                    if (item.materialType === 'Question') {
+                        item.noteCategory = null;
+                        item.noteTypeName = null;
                         item.topic = `${targetExam} Question ${item.semester ? decodeSemester(item.semester) : ''}`.trim();
-                    } else {
-                        item.topic = `Lecture Notes ${item.courseCode || ''}`.trim();
                     }
                 });
                 refreshZipUploadedStatus({ render: true });
-                showToast(`Applied exam type "${targetExam}" to all questions.`, 'success');
+                showToast(`Applied exam/material type "${targetExam}" to all questions.`, 'success');
             });
         }
 
@@ -5939,6 +6020,9 @@
                             .filter(t => t.length > 0);
                         const zipSearchTokens = Array.from(new Set(itemTokens));
 
+                        const noteCat = item.noteCategory || (item.materialType === 'Notes' ? (item.examType === "University's Notes" ? 'university' : 'faculty') : null);
+                        const noteName = item.noteTypeName || (noteCat === 'university' ? "University's Notes" : (noteCat === 'faculty' ? "Faculty's Notes" : null));
+
                         // 3. Save to Firestore as Approved
                         const newDocData = {
                             courseCode: item.courseCode.replace(/\s+/g, ' ').toUpperCase(),
@@ -5948,6 +6032,9 @@
                             type: item.materialType || 'Question',
                             materialType: item.materialType || 'Question',
                             examType: item.examType || 'Midterm',
+                            noteCategory: noteCat,
+                            noteType: noteCat,
+                            noteTypeName: noteName,
                             topic: itemTopic,
                             facultyId: item.facultyId || null,
                             facultyName: item.facultyName || '',
