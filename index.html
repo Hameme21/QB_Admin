@@ -2162,8 +2162,23 @@
                         <div id="adminUpFacultyDropdown" class="autocomplete-dropdown" style="position:absolute; top:100%; left:0; right:0; max-height:200px; overflow-y:auto; z-index:1000; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); box-shadow:var(--shadow-md); display:none;"></div>
                     </div>
 
+                    <!-- Drive Link for Notes (Zero-Cloudinary Storage) -->
+                    <div class="form-group" id="adminUpDriveLinkGroup" style="display:none; margin-bottom:0.75rem;">
+                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" for="adminUpDriveLink">
+                            Drive Link <span style="color:var(--danger); font-weight:700;">*</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(Google Drive or supported cloud storage link - Zero Cloudinary Upload)</span>
+                        </label>
+                        <div style="position:relative;">
+                            <input type="url" id="adminUpDriveLink" class="input-control" placeholder="https://drive.google.com/file/d/.../view or share link" style="padding-left:2.5rem;">
+                            <i id="adminUpDriveLinkIcon" class="fab fa-google-drive" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:#10b981; font-size:1.15rem;"></i>
+                        </div>
+                        <div id="adminUpProviderFeedback" style="font-size:0.75rem; margin-top:0.35rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem;">
+                            <i class="fas fa-info-circle" style="color:var(--info);"></i> External storage link is saved directly. Note files remain on Google Drive and never upload to Cloudinary.
+                        </div>
+                    </div>
+
                     <!-- File Dropzone 1: Main File -->
-                    <div class="form-group" style="margin-bottom:0.75rem;">
+                    <div class="form-group" id="adminMainFileGroup" style="margin-bottom:0.75rem;">
                         <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" id="adminMainFileLabel">Main File (PDF/Image) *</label>
                         <div class="file-drop-area" id="adminMainDropzone" onclick="document.getElementById('adminUpMainFile').click()" style="padding:1rem;">
                             <input type="file" id="adminUpMainFile" accept=".pdf,.png,.jpg,.jpeg" required style="display:none;">
@@ -2694,6 +2709,127 @@
             return `${dept}_${cleanCourseCode}_${examName}_${trimesterCode}.pdf`;
         };
 
+        function detectExternalStorage(url) {
+            if (!url || typeof url !== 'string') {
+                return { provider: 'unknown', providerName: 'External File', icon: 'fas fa-external-link-alt', embedUrl: '', originalUrl: '', canEmbed: false };
+            }
+            const u = url.trim();
+
+            // 1. Google Drive / Docs / Slides / Sheets
+            const gdMatch = u.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|docs\.google\.com\/(?:document|presentation|spreadsheets)\/d\/)([a-zA-Z0-9_-]+)/);
+            if (gdMatch) {
+                const fileId = gdMatch[1];
+                let embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                let providerName = 'Google Drive';
+                if (u.includes('docs.google.com/document/d/')) {
+                    embedUrl = `https://docs.google.com/document/d/${fileId}/preview`;
+                    providerName = 'Google Docs';
+                } else if (u.includes('docs.google.com/presentation/d/')) {
+                    embedUrl = `https://docs.google.com/presentation/d/${fileId}/embed`;
+                    providerName = 'Google Slides';
+                } else if (u.includes('docs.google.com/spreadsheets/d/')) {
+                    embedUrl = `https://docs.google.com/spreadsheets/d/${fileId}/preview`;
+                    providerName = 'Google Sheets';
+                }
+                return {
+                    provider: 'google-drive',
+                    providerName: providerName,
+                    icon: 'fab fa-google-drive',
+                    fileId: fileId,
+                    embedUrl: embedUrl,
+                    originalUrl: u,
+                    canEmbed: true
+                };
+            }
+
+            // Google Drive folder
+            const gdFolder = u.match(/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([a-zA-Z0-9_-]+)/);
+            if (gdFolder) {
+                return {
+                    provider: 'google-drive',
+                    providerName: 'Google Drive Folder',
+                    icon: 'fab fa-google-drive',
+                    fileId: gdFolder[1],
+                    embedUrl: `https://drive.google.com/embeddedfolderview?id=${gdFolder[1]}#grid`,
+                    originalUrl: u,
+                    canEmbed: true
+                };
+            }
+
+            // 2. OneDrive / SharePoint
+            if (u.includes('1drv.ms') || u.includes('onedrive.live.com') || u.includes('sharepoint.com')) {
+                let embedUrl = u;
+                if (u.includes('1drv.ms')) embedUrl = u.replace('/u/', '/e/');
+                return {
+                    provider: 'onedrive',
+                    providerName: 'OneDrive',
+                    icon: 'fab fa-microsoft',
+                    embedUrl: embedUrl,
+                    originalUrl: u,
+                    canEmbed: true
+                };
+            }
+
+            // 3. Dropbox
+            if (u.includes('dropbox.com')) {
+                const embedUrl = u.replace(/[?&]dl=0/, '?raw=1').concat(u.includes('?') ? '' : '?raw=1');
+                return {
+                    provider: 'dropbox',
+                    providerName: 'Dropbox',
+                    icon: 'fab fa-dropbox',
+                    embedUrl: embedUrl,
+                    originalUrl: u,
+                    canEmbed: true
+                };
+            }
+
+            // 4. Box
+            if (u.includes('box.com')) {
+                const embedUrl = u.replace('/s/', '/embed/s/');
+                return {
+                    provider: 'box',
+                    providerName: 'Box',
+                    icon: 'fas fa-box',
+                    embedUrl: embedUrl,
+                    originalUrl: u,
+                    canEmbed: true
+                };
+            }
+
+            // 5. Office docs via Google Docs Viewer
+            if (/\.(pptx?|docx?|xlsx?)($|\?)/i.test(u)) {
+                return {
+                    provider: 'office',
+                    providerName: 'Office Document',
+                    icon: 'fas fa-file-word',
+                    embedUrl: `https://docs.google.com/gview?url=${encodeURIComponent(u)}&embedded=true`,
+                    originalUrl: u,
+                    canEmbed: true
+                };
+            }
+
+            // 6. Direct PDF / Cloudinary
+            if (/\.pdf($|\?)/i.test(u) || u.includes('cloudinary.com')) {
+                return {
+                    provider: 'pdf',
+                    providerName: 'PDF Document',
+                    icon: 'fas fa-file-pdf',
+                    embedUrl: u,
+                    originalUrl: u,
+                    canEmbed: true
+                };
+            }
+
+            return {
+                provider: 'web',
+                providerName: 'External Storage',
+                icon: 'fas fa-external-link-alt',
+                embedUrl: u,
+                originalUrl: u,
+                canEmbed: false
+            };
+        }
+
         const getMainFileUrl = (sub) => {
             if (!sub) return '';
             return sub.pdfUrl || sub.fileUrl || sub.notePdfUrl || sub.url || sub.downloadUrl || sub.cloudinaryUrl || (sub.materialAssets && sub.materialAssets.find(a => a.assetType !== 'solution')?.pdfUrl) || (sub.materialAssets && sub.materialAssets[0]?.pdfUrl) || (sub.materialAssets && sub.materialAssets[0]?.url) || '';
@@ -2712,6 +2848,33 @@
                 </div>`;
                 return;
             }
+
+            const storage = detectExternalStorage(url);
+            const isExternalDrive = storage.provider === 'google-drive' || 
+                                   storage.provider === 'onedrive' || 
+                                   storage.provider === 'dropbox' || 
+                                   storage.provider === 'box' || 
+                                   storage.provider === 'office';
+
+            if (isExternalDrive) {
+                const targetEmbed = storage.canEmbed ? storage.embedUrl : (storage.originalUrl || url);
+                container.innerHTML = `
+                    <div class="preview-inner-wrapper">
+                        <div style="background:var(--bg);padding:0.45rem 0.85rem;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:space-between;align-items:center;font-size:0.825rem;">
+                            <span style="color:var(--text-muted);font-weight:600;"><i class="${storage.icon}" style="color:#10b981;margin-right:0.4rem;"></i> ${storage.providerName} Preview</span>
+                            <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
+                                <a href="${storage.originalUrl || url}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding:0.2rem 0.65rem;font-size:0.75rem;background:#10b981;border-color:#10b981;display:inline-flex;align-items:center;gap:0.3rem;">
+                                    <i class="${storage.icon}"></i> Open on ${storage.provider === 'google-drive' ? 'Drive' : storage.providerName}
+                                </a>
+                                <a href="${storage.originalUrl || url}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="padding:0.2rem 0.5rem;font-size:0.75rem;"><i class="fas fa-external-link-alt"></i> New Tab</a>
+                            </div>
+                        </div>
+                        <iframe id="adminPreviewIframe" class="preview-iframe" src="${targetEmbed}" title="${storage.providerName} Preview"></iframe>
+                    </div>
+                `;
+                return;
+            }
+
             const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('/raw/') || url.toLowerCase().includes('pdf') || true;
             const googleDocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
             if (isPdf) {
@@ -2745,6 +2908,12 @@
         window.forceDownloadFile = async function(url, fileName) {
             if (!url || url === '#' || url === 'null') {
                 if (typeof showToast === 'function') showToast('No file URL available to download', 'error');
+                return;
+            }
+
+            const storage = typeof detectExternalStorage === 'function' ? detectExternalStorage(url) : null;
+            if (storage && (storage.provider === 'google-drive' || storage.provider === 'onedrive' || storage.provider === 'dropbox' || storage.provider === 'box' || storage.provider === 'office')) {
+                window.open(storage.originalUrl || url, '_blank', 'noopener,noreferrer');
                 return;
             }
             let targetUrl = url;
@@ -3075,6 +3244,8 @@
                 const tr = document.createElement('tr');
                 const fileUrl = getMainFileUrl(sub) || '#';
                 const mainName = formatPdfDownloadName(sub, false);
+                const storage = detectExternalStorage(fileUrl);
+                const isExt = storage && (storage.provider === 'google-drive' || storage.provider === 'onedrive' || storage.provider === 'dropbox' || storage.provider === 'box' || storage.provider === 'office');
                 const cCode = sub.courseCode || sub.course || sub.code || 'N/A';
                 const trimText = sub.trimester ? 'T' + sub.trimester : (sub.semester ? decodeSemester(sub.semester) : '-');
                 const displayType = sub.materialType || sub.type || 'Question';
@@ -3089,7 +3260,7 @@
                     <td class="nowrap-cell"><span class="badge badge-approved">Approved</span></td>
                     <td>
                         <div class="table-actions-group">
-                            <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                            ${isExt ? `<a href="${storage.originalUrl || fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; color:#10b981;" title="Open on ${storage.provider === 'google-drive' ? 'Drive' : storage.providerName}"><i class="${storage.icon}"></i></a>` : `<button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>`}
                             <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Re-Review / Edit Status">
                                 <i class="fas fa-edit"></i> Re-Review
                             </button>
@@ -3324,6 +3495,8 @@
                 const status = sub.status || 'pending';
                 const fileUrl = getMainFileUrl(sub) || '#';
                 const mainName = formatPdfDownloadName(sub, false);
+                const storage = detectExternalStorage(fileUrl);
+                const isExt = storage && (storage.provider === 'google-drive' || storage.provider === 'onedrive' || storage.provider === 'dropbox' || storage.provider === 'box' || storage.provider === 'office');
                 let originBadge = '';
                 if (sub.isBulkZip) {
                     originBadge = `<span class="badge" style="background:rgba(245,158,11,0.15); color:var(--warning); font-size:0.65rem; padding:0.15rem 0.4rem; border-radius:4px; margin-left:0.35rem;" title="Submitted via Bulk ZIP archive"><i class="fas fa-file-archive"></i> Bulk ZIP</span>`;
@@ -3340,7 +3513,7 @@
                     <td class="nowrap-cell"><span class="badge ${getBadgeClass(status)}">${capitalize(status.replace('_', ' '))}</span></td>
                     <td>
                         <div class="table-actions-group">
-                            <button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>
+                            ${isExt ? `<a href="${storage.originalUrl || fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; color:#10b981;" title="Open on ${storage.provider === 'google-drive' ? 'Drive' : storage.providerName}"><i class="${storage.icon}"></i></a>` : `<button type="button" onclick="forceDownloadFile('${fileUrl}', '${mainName}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Download PDF"><i class="fas fa-download"></i></button>`}
                             ${status !== 'approved' ? `<button class="btn btn-outline btn-quick-approve" data-id="${sub.id}" style="color:var(--success); border-color:var(--success); padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Approve"><i class="fas fa-check"></i></button>` : ''}
                             ${status !== 'rejected' ? `<button class="btn btn-outline btn-quick-reject" data-id="${sub.id}" style="color:var(--danger); border-color:var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem;" title="Reject"><i class="fas fa-times"></i></button>` : ''}
                             <button class="btn btn-outline btn-review" data-id="${sub.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Review</button>
@@ -3431,10 +3604,20 @@
             const dlBtn = document.getElementById('btn-download-file');
             if(dlBtn) {
                 const fUrl = sub.pdfUrl || sub.fileUrl || sub.notePdfUrl || (sub.materialAssets && sub.materialAssets[0]?.pdfUrl) || '#';
-                dlBtn.onclick = (e) => {
-                    e.preventDefault();
-                    forceDownloadFile(fUrl, formatPdfDownloadName(sub, false));
-                };
+                const storage = detectExternalStorage(fUrl);
+                if (storage && (storage.provider === 'google-drive' || storage.provider === 'onedrive' || storage.provider === 'dropbox' || storage.provider === 'box' || storage.provider === 'office')) {
+                    dlBtn.innerHTML = `<i class="${storage.icon}"></i> Open on ${storage.provider === 'google-drive' ? 'Drive' : storage.providerName}`;
+                    dlBtn.onclick = (e) => {
+                        e.preventDefault();
+                        window.open(storage.originalUrl || fUrl, '_blank', 'noopener,noreferrer');
+                    };
+                } else {
+                    dlBtn.innerHTML = `<i class="fas fa-download"></i> Download File`;
+                    dlBtn.onclick = (e) => {
+                        e.preventDefault();
+                        forceDownloadFile(fUrl, formatPdfDownloadName(sub, false));
+                    };
+                }
             }
 
             const editCourse = document.getElementById('edit-course');
@@ -4834,11 +5017,27 @@
                 const topicLbl = document.getElementById('adminTopicLabel');
                 const mainLbl = document.getElementById('adminMainFileLabel');
                 const topicInp = document.getElementById('adminUpTopic');
+                const driveGrp = document.getElementById('adminUpDriveLinkGroup');
+                const mainGrp = document.getElementById('adminMainFileGroup');
+                const mainInp = document.getElementById('adminUpMainFile');
+                const driveInp = document.getElementById('adminUpDriveLink');
 
                 if (examGrp) examGrp.style.display = (val === 'Question' || val === 'Solution') ? 'block' : 'none';
                 if (solGrp) solGrp.style.display = val === 'Question' ? 'block' : 'none';
                 const noteGrp = document.getElementById('adminNoteTypeGroup');
                 if (noteGrp) noteGrp.style.display = val === 'Notes' ? 'block' : 'none';
+
+                if (val === 'Notes') {
+                    if (driveGrp) driveGrp.style.display = 'block';
+                    if (mainGrp) mainGrp.style.display = 'none';
+                    if (mainInp) mainInp.required = false;
+                    if (driveInp) driveInp.required = true;
+                } else {
+                    if (driveGrp) driveGrp.style.display = 'none';
+                    if (mainGrp) mainGrp.style.display = 'block';
+                    if (mainInp) mainInp.required = true;
+                    if (driveInp) driveInp.required = false;
+                }
                 
                 if (mainLbl) {
                     if (val === 'Solution') {
@@ -4853,12 +5052,7 @@
                 if (topicLbl && topicInp) {
                     if (val === 'Notes') {
                         topicLbl.innerHTML = 'Topic / Title <span style="color:var(--danger); font-weight:700;">* (Required for Notes)</span>';
-                        topicInp.placeholder = 'e.g. Chapter 3 Summary, Lecture Notes Week 5';
-                        const mainInp = document.getElementById('adminUpMainFile');
-                        if (mainInp && mainInp.files && mainInp.files.length > 0 && !topicInp.value.trim()) {
-                            const detected = extractNoteTopicFromFileName(mainInp.files[0].name);
-                            if (detected) topicInp.value = detected;
-                        }
+                        topicInp.placeholder = 'e.g. Graph Algorithms Notes, Chapter 3 Summary';
                     } else if (val === 'Solution') {
                         topicLbl.innerHTML = 'Topic / Title <span style="color:var(--text-muted); font-weight:normal;">(e.g. Midterm Spring 2024 Solution)</span>';
                         topicInp.placeholder = 'e.g. Midterm Spring 2024 Solution';
@@ -4869,6 +5063,25 @@
                 }
 
                 updateAdminFacultyRequirementUI();
+            });
+        }
+
+        const adminDriveInp = document.getElementById('adminUpDriveLink');
+        if (adminDriveInp) {
+            adminDriveInp.addEventListener('input', () => {
+                const url = adminDriveInp.value.trim();
+                const icon = document.getElementById('adminUpDriveLinkIcon');
+                const feedback = document.getElementById('adminUpProviderFeedback');
+                if (!url) {
+                    if (icon) icon.className = 'fab fa-google-drive';
+                    if (feedback) feedback.innerHTML = '<i class="fas fa-info-circle" style="color:var(--info);"></i> External storage link is saved directly. Note files remain on Google Drive and never upload to Cloudinary.';
+                    return;
+                }
+                const storage = detectExternalStorage(url);
+                if (icon) icon.className = storage.icon;
+                if (feedback) {
+                    feedback.innerHTML = `<i class="${storage.icon}" style="color:#10b981;"></i> Detected: <strong>${storage.providerName}</strong> — Direct preview supported.`;
+                }
             });
         }
 
@@ -4909,6 +5122,93 @@
 
                     if (isLab && !facultyName && !facultyId) {
                         throw new Error('Faculty selection is strictly required for Lab courses (1 credit). Please select a faculty member.');
+                    }
+
+                    if (materialType === 'Notes') {
+                        if (!topic) {
+                            throw new Error('Please enter a Topic / Title for Lecture Notes.');
+                        }
+                        const driveLink = document.getElementById('adminUpDriveLink')?.value?.trim();
+                        if (!driveLink || !/^https?:\/\//i.test(driveLink)) {
+                            throw new Error('Please enter a valid Google Drive or supported cloud storage link (starting with http:// or https://) for your note.');
+                        }
+
+                        const storage = detectExternalStorage(driveLink);
+                        const searchTokens = buildSearchTokens(courseCode, course.title, topic, facultyName, facultyCode);
+
+                        status.innerHTML = '<div style="font-size:0.8rem; color:var(--success); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Publishing note to Question Bank...</div>';
+                        BackgroundUploadManager.updateTitle('Publishing note to Question Bank...');
+
+                        // Add directly as approved note to Firestore - ZERO CLOUDINARY UPLOAD!
+                        const newDocRef = await addDoc(collection(db, QUESTION_COLLECTION), {
+                            course: courseCode.replace(/\s+/g, ' ').toUpperCase(),
+                            courseCode: courseCode.replace(/\s+/g, ' ').toUpperCase(),
+                            courseName: course.title,
+                            title: topic,
+                            topic: topic,
+                            credits: Number(course.credits) || Number(course.cr) || (isLab ? 1 : 3),
+                            isLab: isLab,
+                            semester,
+                            trimester: trimester || 0,
+                            type: 'Notes',
+                            materialType: 'note',
+                            materialGroup: 'notes',
+                            examType: noteTypeName || 'Notes',
+                            noteCategory: noteCategory || 'faculty',
+                            noteType: noteTypeName || 'Lecture Notes',
+                            noteTypeName: noteTypeName || 'Lecture Notes',
+                            fileUrl: driveLink,
+                            pdfUrl: driveLink,
+                            externalProvider: storage.provider,
+                            externalProviderName: storage.providerName,
+                            embedUrl: storage.embedUrl,
+                            isExternalStorage: true,
+                            facultyId: facultyId || null,
+                            facultyName: facultyName || '',
+                            facultyCode: facultyCode || '',
+                            searchTokens: searchTokens || [],
+                            status: 'approved',
+                            approvedAt: serverTimestamp(),
+                            approvedBy: 'Admin (Direct)',
+                            submitterName: 'Admin Direct',
+                            submitterEmail: currentUser?.email || 'admin@uiu.ac.bd',
+                            courseSearch: `${courseCode} ${course.title} ${topic} ${facultyName} ${facultyCode}`.toLowerCase(),
+                            submittedAt: serverTimestamp(),
+                            createdAt: serverTimestamp()
+                        });
+
+                        try {
+                            await addDoc(collection(db, AUDIT_COLLECTION), {
+                                action: 'DIRECT_UPLOAD',
+                                adminEmail: currentUser?.email || 'admin@uiu.ac.bd',
+                                targetId: newDocRef.id,
+                                targetCourse: courseCode,
+                                notes: `Direct uploaded & approved note (Drive): ${courseCode} (${topic})`,
+                                timestamp: serverTimestamp()
+                            });
+                        } catch (auditErr) {
+                            console.warn('Audit log write skipped:', auditErr);
+                        }
+
+                        BackgroundUploadManager.finish();
+                        if (typeof showToast === 'function') showToast('Note published directly to Question Bank!', 'success');
+                        status.innerHTML = '<div style="font-size:0.8rem; color:var(--success); margin-top:0.5rem;"><i class="fas fa-check-circle"></i> Note published successfully!</div>';
+                        document.getElementById('adminDirectUploadForm').reset();
+                        const driveGrpEl = document.getElementById('adminUpDriveLinkGroup');
+                        const mainGrpEl = document.getElementById('adminMainFileGroup');
+                        const mainInpEl = document.getElementById('adminUpMainFile');
+                        const driveInpEl = document.getElementById('adminUpDriveLink');
+                        if (driveGrpEl) driveGrpEl.style.display = 'none';
+                        if (mainGrpEl) mainGrpEl.style.display = 'block';
+                        if (mainInpEl) mainInpEl.required = true;
+                        if (driveInpEl) driveInpEl.required = false;
+
+                        setTimeout(() => {
+                            const modal = document.getElementById('adminUploadModal');
+                            if (modal) modal.classList.remove('active');
+                            fetchSubmissions();
+                        }, 1200);
+                        return;
                     }
 
                     const mainFile = document.getElementById('adminUpMainFile').files[0];
