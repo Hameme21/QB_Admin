@@ -2660,6 +2660,14 @@
 
         const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
+        function extractNoteTopicFromFileName(name) {
+            if (!name) return '';
+            let base = String(name).replace(/^.*[\\\/]/, '');
+            base = base.replace(/\.[^/.]+$/, '');
+            base = base.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+            return base;
+        }
+
         const formatPdfDownloadName = (paper, isSolution = false) => {
             if (!paper) return 'download.pdf';
             const courseCodeRaw = (paper.courseCode || 'CSE1111').trim();
@@ -2668,6 +2676,10 @@
             const cleanCourseCode = courseCodeRaw.replace(/\s+/g, '').toUpperCase();
             
             let examName = isSolution ? 'Solution' : (paper.examType || paper.type || paper.topic || 'Exam');
+            if (!isSolution && (paper.type === 'Notes' || paper.materialType === 'note') && paper.topic) {
+                const topicPart = String(paper.topic).replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 45);
+                return `${cleanCourseCode}_Notes_${topicPart || 'Lecture'}.pdf`;
+            }
             if (!isSolution && paper.type === 'Question' && paper.examType) {
                 examName = paper.examType;
             }
@@ -4737,6 +4749,17 @@
                     dropzone.classList.remove('has-file');
                     return;
                 }
+
+                // In notes, detect topic as file name
+                if (inputId === 'adminUpMainFile') {
+                    const selType = document.getElementById('adminUpType')?.value;
+                    const topicInp = document.getElementById('adminUpTopic');
+                    if (selType === 'Notes' && topicInp) {
+                        const detected = extractNoteTopicFromFileName(file.name);
+                        if (detected) topicInp.value = detected;
+                    }
+                }
+
                 const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
                 content.innerHTML = `
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; text-align:left;">
@@ -4831,6 +4854,11 @@
                     if (val === 'Notes') {
                         topicLbl.innerHTML = 'Topic / Title <span style="color:var(--danger); font-weight:700;">* (Required for Notes)</span>';
                         topicInp.placeholder = 'e.g. Chapter 3 Summary, Lecture Notes Week 5';
+                        const mainInp = document.getElementById('adminUpMainFile');
+                        if (mainInp && mainInp.files && mainInp.files.length > 0 && !topicInp.value.trim()) {
+                            const detected = extractNoteTopicFromFileName(mainInp.files[0].name);
+                            if (detected) topicInp.value = detected;
+                        }
                     } else if (val === 'Solution') {
                         topicLbl.innerHTML = 'Topic / Title <span style="color:var(--text-muted); font-weight:normal;">(e.g. Midterm Spring 2024 Solution)</span>';
                         topicInp.placeholder = 'e.g. Midterm Spring 2024 Solution';
@@ -4874,7 +4902,7 @@
                         noteTypeName = (noteCategory === 'university') ? "University's Notes" : "Faculty's Notes";
                     }
                     const examType = (materialType === 'Question' || materialType === 'Solution') ? document.getElementById('adminUpExamType').value : (noteTypeName || 'Notes');
-                    const topic = document.getElementById('adminUpTopic').value.trim();
+                    let topic = document.getElementById('adminUpTopic').value.trim();
                     const facultyId = document.getElementById('adminUpFacultyId')?.value ? Number(document.getElementById('adminUpFacultyId').value) : null;
                     const facultyName = (document.getElementById('adminUpFacultyName')?.value || document.getElementById('adminUpFacultySearch')?.value || '').trim();
                     const facultyCode = (document.getElementById('adminUpFacultyCode')?.value || '').trim();
@@ -4883,16 +4911,23 @@
                         throw new Error('Faculty selection is strictly required for Lab courses (1 credit). Please select a faculty member.');
                     }
 
+                    const mainFile = document.getElementById('adminUpMainFile').files[0];
+                    const solFile = document.getElementById('adminUpSolFile')?.files[0];
+
+                    if (!mainFile) throw new Error('Please attach a main file.');
+
+                    // In notes, detect topic as file name if empty
+                    if (materialType === 'Notes' && !topic && mainFile) {
+                        topic = extractNoteTopicFromFileName(mainFile.name);
+                        const topicInp = document.getElementById('adminUpTopic');
+                        if (topicInp) topicInp.value = topic;
+                    }
+
                     if (materialType === 'Notes' && !topic) {
                         throw new Error('Please enter a Topic / Title for Lecture Notes.');
                     }
 
                     const searchTokens = buildSearchTokens(courseCode, course.title, topic, facultyName, facultyCode);
-
-                    const mainFile = document.getElementById('adminUpMainFile').files[0];
-                    const solFile = document.getElementById('adminUpSolFile')?.files[0];
-
-                    if (!mainFile) throw new Error('Please attach a main file.');
 
                     // Strictly forbid duplicate question papers for same course + exam + semester (Midterm / Final only)
                     if (materialType === 'Question' && (examType.toLowerCase() === 'midterm' || examType.toLowerCase() === 'final')) {
@@ -5466,7 +5501,9 @@
             } else if (materialType === 'Solution') {
                 topic = `${examType} Solution ${semester ? decodeSemester(semester) : ''}`.trim();
             } else {
-                topic = `${noteTypeName || examType} ${detectedCourse ? detectedCourse.code : ''}`.trim();
+                // In notes, detect topic as the file name
+                const detectedNoteTopic = extractNoteTopicFromFileName(fileName || cleanPath);
+                topic = detectedNoteTopic || `${noteTypeName || examType} ${detectedCourse ? detectedCourse.code : ''}`.trim();
             }
 
             return {
@@ -5773,12 +5810,14 @@
                             parsedZipEntries[idx].materialType = 'Notes';
                             parsedZipEntries[idx].noteCategory = 'university';
                             parsedZipEntries[idx].noteTypeName = "University's Notes";
-                            parsedZipEntries[idx].topic = `University's Notes ${parsedZipEntries[idx].courseCode || ''}`.trim();
+                            const fileTopic = extractNoteTopicFromFileName(parsedZipEntries[idx].originalFilename || parsedZipEntries[idx].filePath);
+                            parsedZipEntries[idx].topic = fileTopic || `University's Notes ${parsedZipEntries[idx].courseCode || ''}`.trim();
                         } else if (e.target.value === "Faculty's Notes" || e.target.value === 'Notes') {
                             parsedZipEntries[idx].materialType = 'Notes';
                             parsedZipEntries[idx].noteCategory = 'faculty';
                             parsedZipEntries[idx].noteTypeName = "Faculty's Notes";
-                            parsedZipEntries[idx].topic = `Faculty's Notes ${parsedZipEntries[idx].courseCode || ''}`.trim();
+                            const fileTopic = extractNoteTopicFromFileName(parsedZipEntries[idx].originalFilename || parsedZipEntries[idx].filePath);
+                            parsedZipEntries[idx].topic = fileTopic || `Faculty's Notes ${parsedZipEntries[idx].courseCode || ''}`.trim();
                         } else {
                             parsedZipEntries[idx].topic = `${e.target.value} Question ${parsedZipEntries[idx].semester ? decodeSemester(parsedZipEntries[idx].semester) : ''}`.trim();
                         }
@@ -5805,6 +5844,16 @@
                     const idx = parseInt(e.target.dataset.index, 10);
                     if (parsedZipEntries[idx]) {
                         parsedZipEntries[idx].materialType = e.target.value;
+                        if (e.target.value === 'Notes') {
+                            if (!parsedZipEntries[idx].noteCategory) {
+                                parsedZipEntries[idx].noteCategory = 'faculty';
+                                parsedZipEntries[idx].noteTypeName = "Faculty's Notes";
+                                parsedZipEntries[idx].examType = "Faculty's Notes";
+                            }
+                            const fileTopic = extractNoteTopicFromFileName(parsedZipEntries[idx].originalFilename || parsedZipEntries[idx].filePath);
+                            if (fileTopic) parsedZipEntries[idx].topic = fileTopic;
+                            renderZipParsedTable();
+                        }
                     }
                 });
             });
@@ -5917,12 +5966,14 @@
                         item.materialType = 'Notes';
                         item.noteCategory = 'university';
                         item.noteTypeName = "University's Notes";
-                        item.topic = `University's Notes ${item.courseCode || ''}`.trim();
+                        const fileTopic = extractNoteTopicFromFileName(item.originalFilename || item.filePath);
+                        item.topic = fileTopic || `University's Notes ${item.courseCode || ''}`.trim();
                     } else if (targetExam === "Faculty's Notes" || targetExam === 'Notes') {
                         item.materialType = 'Notes';
                         item.noteCategory = 'faculty';
                         item.noteTypeName = "Faculty's Notes";
-                        item.topic = `Faculty's Notes ${item.courseCode || ''}`.trim();
+                        const fileTopic = extractNoteTopicFromFileName(item.originalFilename || item.filePath);
+                        item.topic = fileTopic || `Faculty's Notes ${item.courseCode || ''}`.trim();
                     } else {
                         item.materialType = 'Question';
                         item.noteCategory = null;
