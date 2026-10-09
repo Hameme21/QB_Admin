@@ -2162,18 +2162,72 @@
                         <div id="adminUpFacultyDropdown" class="autocomplete-dropdown" style="position:absolute; top:100%; left:0; right:0; max-height:200px; overflow-y:auto; z-index:1000; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); box-shadow:var(--shadow-md); display:none;"></div>
                     </div>
 
-                    <!-- Drive Link for Notes (Zero-Cloudinary Storage) -->
+                    <!-- Drive Link & Multiple Notes Links Section (Zero-Cloudinary Storage) -->
                     <div class="form-group" id="adminUpDriveLinkGroup" style="display:none; margin-bottom:0.75rem;">
-                        <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" for="adminUpDriveLink">
-                            Drive Link <span style="color:var(--danger); font-weight:700;">*</span>
-                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(Google Drive or supported cloud storage link - Zero Cloudinary Upload)</span>
-                        </label>
-                        <div style="position:relative;">
-                            <input type="url" id="adminUpDriveLink" class="input-control" placeholder="https://drive.google.com/file/d/.../view or share link" style="padding-left:2.5rem;">
-                            <i id="adminUpDriveLinkIcon" class="fab fa-google-drive" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:#10b981; font-size:1.15rem;"></i>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                            <label style="font-weight:600; font-size:0.8rem; margin:0;" for="adminUpDriveLink">
+                                Note Submission Link(s) <span style="color:var(--danger); font-weight:700;">*</span>
+                            </label>
+                            <!-- Mode Switcher: Single vs Multiple -->
+                            <div style="display:inline-flex; background:rgba(0,0,0,0.06); border:1px solid var(--border); border-radius:18px; padding:2px; gap:2px;">
+                                <button type="button" id="adminNoteModeSingleBtn" style="border:none; background:var(--primary); color:#fff; border-radius:14px; padding:3px 10px; font-size:0.72rem; font-weight:600; cursor:pointer; transition:all 0.15s;" onclick="switchAdminNoteLinkMode('single')">
+                                    <i class="fas fa-link"></i> Single Link
+                                </button>
+                                <button type="button" id="adminNoteModeMultiBtn" style="border:none; background:transparent; color:var(--text-muted); border-radius:14px; padding:3px 10px; font-size:0.72rem; font-weight:600; cursor:pointer; transition:all 0.15s;" onclick="switchAdminNoteLinkMode('multi')">
+                                    <i class="fas fa-layer-group"></i> Multiple Links (Batch)
+                                </button>
+                            </div>
                         </div>
-                        <div id="adminUpProviderFeedback" style="font-size:0.75rem; margin-top:0.35rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem;">
-                            <i class="fas fa-info-circle" style="color:var(--info);"></i> External storage link is saved directly. Note files remain on Google Drive and never upload to Cloudinary.
+
+                        <!-- Single Link View -->
+                        <div id="adminNoteSingleLinkSection">
+                            <div style="position:relative;">
+                                <input type="url" id="adminUpDriveLink" class="input-control" placeholder="https://drive.google.com/file/d/.../view or share link" style="padding-left:2.5rem;">
+                                <i id="adminUpDriveLinkIcon" class="fab fa-google-drive" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:#10b981; font-size:1.15rem;"></i>
+                            </div>
+                            <div id="adminUpProviderFeedback" style="font-size:0.75rem; margin-top:0.35rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem;">
+                                <i class="fas fa-info-circle" style="color:var(--info);"></i> External storage link is saved directly. Note files remain on Google Drive and never upload to Cloudinary.
+                            </div>
+                        </div>
+
+                        <!-- Multiple Links Section -->
+                        <div id="adminNoteMultiLinkSection" style="display:none; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.75rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.4rem;">
+                                <span style="font-size:0.78rem; font-weight:700; color:var(--text-main); display:inline-flex; align-items:center; gap:0.4rem;">
+                                    <i class="fas fa-list-ol" style="color:var(--primary);"></i> Multiple Notes Queue
+                                    <span class="pill primary" id="adminMultiLinksCount" style="font-size:0.7rem; padding:0.1rem 0.45rem;">1 row</span>
+                                </span>
+                                <div style="display:flex; gap:0.35rem;">
+                                    <button type="button" class="btn btn-outline" onclick="toggleAdminBulkPasteBox()" style="font-size:0.72rem; padding:0.25rem 0.6rem; border-radius:4px; display:inline-flex; align-items:center; gap:0.3rem;" title="Paste multiple links at once">
+                                        <i class="fas fa-paste"></i> Bulk Paste
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="addAdminNoteLinkRow()" style="font-size:0.72rem; padding:0.25rem 0.6rem; border-radius:4px; display:inline-flex; align-items:center; gap:0.3rem;">
+                                        <i class="fas fa-plus"></i> Add Row
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Bulk Paste Box (Expandable) -->
+                            <div id="adminBulkPasteBox" style="display:none; margin-bottom:0.6rem; padding:0.6rem; background:var(--surface); border:1px dashed var(--border); border-radius:6px;">
+                                <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.3rem; display:flex; justify-content:space-between; align-items:center;">
+                                    <span>Paste links (1 per line): <code>Title | Link</code> or simply URLs</span>
+                                    <button type="button" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.85rem;" onclick="toggleAdminBulkPasteBox(false)">&times;</button>
+                                </div>
+                                <textarea id="adminBulkPasteInput" class="input-control" rows="3" placeholder="Chapter 1 Introduction | https://drive.google.com/file/d/1...&#10;Chapter 2 Tree Traversal | https://drive.google.com/file/d/2...&#10;https://drive.google.com/file/d/3..." style="font-size:0.75rem; font-family:monospace; resize:vertical;"></textarea>
+                                <div style="display:flex; justify-content:flex-end; gap:0.4rem; margin-top:0.4rem;">
+                                    <button type="button" class="btn btn-outline" style="font-size:0.7rem; padding:0.2rem 0.6rem;" onclick="toggleAdminBulkPasteBox(false)">Cancel</button>
+                                    <button type="button" class="btn btn-primary" style="font-size:0.7rem; padding:0.2rem 0.6rem;" onclick="parseAdminBulkPasteLinks()">
+                                        <i class="fas fa-arrow-down"></i> Import Links
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Dynamic Rows Container -->
+                            <div id="adminMultiLinksContainer" style="display:flex; flex-direction:column; gap:0.45rem; max-height:220px; overflow-y:auto; padding-right:2px;"></div>
+
+                            <div style="font-size:0.72rem; margin-top:0.5rem; color:var(--text-muted); display:flex; align-items:center; gap:0.35rem;">
+                                <i class="fas fa-shield-alt" style="color:#10b981;"></i> Each link row will be directly published as an approved note in Question Bank.
+                            </div>
                         </div>
                     </div>
 
@@ -4590,6 +4644,11 @@
                 }, 3000);
             }
 
+            function finish(statusText = 'Upload Complete!') {
+                updateTitle(statusText);
+                stop();
+            }
+
             function updateTitle(statusText) {
                 if (activeUploadCount > 0 && statusText) {
                     document.title = `${statusText} · QB Admin`;
@@ -4619,6 +4678,7 @@
             return {
                 start,
                 stop,
+                finish,
                 delay,
                 updateTitle,
                 isActive: () => activeUploadCount > 0
@@ -5031,7 +5091,13 @@
                     if (driveGrp) driveGrp.style.display = 'block';
                     if (mainGrp) mainGrp.style.display = 'none';
                     if (mainInp) mainInp.required = false;
-                    if (driveInp) driveInp.required = true;
+                    if (driveInp) driveInp.required = (adminNoteLinkMode === 'single');
+                    if (adminNoteLinkMode === 'multi') {
+                        const container = document.getElementById('adminMultiLinksContainer');
+                        if (container && container.querySelectorAll('.admin-multi-note-row').length === 0) {
+                            addAdminNoteLinkRow();
+                        }
+                    }
                 } else {
                     if (driveGrp) driveGrp.style.display = 'none';
                     if (mainGrp) mainGrp.style.display = 'block';
@@ -5065,6 +5131,181 @@
                 updateAdminFacultyRequirementUI();
             });
         }
+
+        let adminNoteLinkMode = 'single';
+
+        function updateAdminMultiLinksBadge() {
+            const container = document.getElementById('adminMultiLinksContainer');
+            const badge = document.getElementById('adminMultiLinksCount');
+            if (!container || !badge) return;
+            const rows = container.querySelectorAll('.admin-multi-note-row');
+            badge.textContent = `${rows.length} ${rows.length === 1 ? 'row' : 'rows'}`;
+        }
+
+        window.switchAdminNoteLinkMode = function(mode) {
+            adminNoteLinkMode = mode;
+            const singleBtn = document.getElementById('adminNoteModeSingleBtn');
+            const multiBtn = document.getElementById('adminNoteModeMultiBtn');
+            const singleSec = document.getElementById('adminNoteSingleLinkSection');
+            const multiSec = document.getElementById('adminNoteMultiLinkSection');
+            const driveInp = document.getElementById('adminUpDriveLink');
+            const matType = document.getElementById('adminUpType')?.value;
+
+            if (mode === 'multi') {
+                if (singleBtn) {
+                    singleBtn.style.background = 'transparent';
+                    singleBtn.style.color = 'var(--text-muted)';
+                }
+                if (multiBtn) {
+                    multiBtn.style.background = 'var(--primary)';
+                    multiBtn.style.color = '#fff';
+                }
+                if (singleSec) singleSec.style.display = 'none';
+                if (multiSec) multiSec.style.display = 'block';
+                if (driveInp) driveInp.required = false;
+
+                const container = document.getElementById('adminMultiLinksContainer');
+                if (container && container.querySelectorAll('.admin-multi-note-row').length === 0) {
+                    const currentSingleVal = driveInp ? driveInp.value.trim() : '';
+                    const topicVal = document.getElementById('adminUpTopic')?.value.trim() || '';
+                    addAdminNoteLinkRow(topicVal, currentSingleVal);
+                }
+            } else {
+                if (singleBtn) {
+                    singleBtn.style.background = 'var(--primary)';
+                    singleBtn.style.color = '#fff';
+                }
+                if (multiBtn) {
+                    multiBtn.style.background = 'transparent';
+                    multiBtn.style.color = 'var(--text-muted)';
+                }
+                if (singleSec) singleSec.style.display = 'block';
+                if (multiSec) multiSec.style.display = 'none';
+                if (driveInp) driveInp.required = (matType === 'Notes');
+            }
+        };
+
+        window.updateAdminMultiNoteRowIcon = function(inputEl) {
+            if (!inputEl) return;
+            const row = inputEl.closest('.admin-multi-note-row');
+            if (!row) return;
+            const icon = row.querySelector('.admin-multi-note-icon');
+            if (!icon) return;
+            const url = (inputEl.value || '').trim();
+            if (!url) {
+                icon.className = 'fab fa-google-drive admin-multi-note-icon';
+                icon.style.color = '#10b981';
+                return;
+            }
+            const storage = detectExternalStorage(url);
+            icon.className = `${storage.icon} admin-multi-note-icon`;
+            icon.style.color = '#10b981';
+        };
+
+        window.addAdminNoteLinkRow = function(title = '', url = '') {
+            const container = document.getElementById('adminMultiLinksContainer');
+            if (!container) return;
+
+            const row = document.createElement('div');
+            row.className = 'admin-multi-note-row';
+            row.style.cssText = 'display:flex; gap:0.4rem; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:0.4rem;';
+
+            row.innerHTML = `
+                <div style="flex:1; min-width:110px;">
+                    <input type="text" class="input-control admin-multi-note-title" placeholder="Note Title (e.g. Chapter 1)" style="font-size:0.75rem; padding:0.35rem 0.5rem;">
+                </div>
+                <div style="flex:2; position:relative;">
+                    <input type="url" class="input-control admin-multi-note-url" placeholder="Drive / Cloud Link (https://...)" style="font-size:0.75rem; padding:0.35rem 0.5rem 0.35rem 1.8rem;" oninput="updateAdminMultiNoteRowIcon(this)">
+                    <i class="fab fa-google-drive admin-multi-note-icon" style="position:absolute; left:0.55rem; top:50%; transform:translateY(-50%); font-size:0.85rem; color:#10b981;"></i>
+                </div>
+                <button type="button" class="btn btn-outline" style="padding:0.35rem 0.5rem; color:var(--danger); border-color:var(--border); border-radius:4px; font-size:0.75rem;" onclick="removeAdminNoteLinkRow(this)" title="Remove row">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+
+            const titleInput = row.querySelector('.admin-multi-note-title');
+            const urlInput = row.querySelector('.admin-multi-note-url');
+            if (titleInput) titleInput.value = title;
+            if (urlInput) {
+                urlInput.value = url;
+                updateAdminMultiNoteRowIcon(urlInput);
+            }
+
+            container.appendChild(row);
+            updateAdminMultiLinksBadge();
+            if (!title && !url && titleInput) {
+                titleInput.focus();
+            }
+        };
+
+        window.removeAdminNoteLinkRow = function(btn) {
+            const row = btn?.closest('.admin-multi-note-row');
+            if (row) row.remove();
+            const container = document.getElementById('adminMultiLinksContainer');
+            if (container && container.querySelectorAll('.admin-multi-note-row').length === 0) {
+                addAdminNoteLinkRow();
+            }
+            updateAdminMultiLinksBadge();
+        };
+
+        window.toggleAdminBulkPasteBox = function(forceShow) {
+            const box = document.getElementById('adminBulkPasteBox');
+            if (!box) return;
+            const isVisible = box.style.display !== 'none';
+            const show = forceShow !== undefined ? !!forceShow : !isVisible;
+            box.style.display = show ? 'block' : 'none';
+            if (show) {
+                const textarea = document.getElementById('adminBulkPasteInput');
+                if (textarea) textarea.focus();
+            }
+        };
+
+        window.parseAdminBulkPasteLinks = function() {
+            const textarea = document.getElementById('adminBulkPasteInput');
+            if (!textarea) return;
+            const rawText = textarea.value.trim();
+            if (!rawText) {
+                if (typeof showToast === 'function') showToast('Please enter at least one link or line to import.', 'warning');
+                return;
+            }
+
+            const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let importedCount = 0;
+
+            lines.forEach((line) => {
+                let noteTitle = '';
+                let noteUrl = '';
+
+                if (line.includes('|')) {
+                    const parts = line.split('|');
+                    noteTitle = parts[0].trim();
+                    noteUrl = parts.slice(1).join('|').trim();
+                } else if (line.includes(' - http')) {
+                    const idx = line.indexOf(' - http');
+                    noteTitle = line.substring(0, idx).trim();
+                    noteUrl = line.substring(idx + 3).trim();
+                } else {
+                    const urlMatch = line.match(/(https?:\/\/[^\s]+)/i);
+                    if (urlMatch) {
+                        noteUrl = urlMatch[1];
+                        noteTitle = line.replace(noteUrl, '').replace(/^[–\-:]\s*|\s*[–\-:]$/g, '').trim();
+                    } else {
+                        noteUrl = line;
+                    }
+                }
+
+                if (noteUrl) {
+                    addAdminNoteLinkRow(noteTitle, noteUrl);
+                    importedCount++;
+                }
+            });
+
+            textarea.value = '';
+            toggleAdminBulkPasteBox(false);
+            if (typeof showToast === 'function') {
+                showToast(`Successfully added ${importedCount} note link(s) to the queue!`, 'success');
+            }
+        };
 
         const adminDriveInp = document.getElementById('adminUpDriveLink');
         if (adminDriveInp) {
@@ -5125,6 +5366,115 @@
                     }
 
                     if (materialType === 'Notes') {
+                        if (adminNoteLinkMode === 'multi') {
+                            const rowEls = Array.from(document.querySelectorAll('#adminMultiLinksContainer .admin-multi-note-row'));
+                            const linkRows = rowEls.map(r => ({
+                                title: (r.querySelector('.admin-multi-note-title')?.value || '').trim(),
+                                url: (r.querySelector('.admin-multi-note-url')?.value || '').trim()
+                            })).filter(r => r.url);
+
+                            if (linkRows.length === 0) {
+                                throw new Error('Please add at least one note link with a valid URL in the queue.');
+                            }
+
+                            const invalidRow = linkRows.find(r => !/^https?:\/\//i.test(r.url));
+                            if (invalidRow) {
+                                throw new Error(`Invalid URL found: "${invalidRow.url}". All links must begin with http:// or https://`);
+                            }
+
+                            const baseTopic = topic || `${courseCode} Note`;
+                            status.innerHTML = `<div style="font-size:0.8rem; color:var(--success); margin-top:0.5rem;"><i class="fas fa-spinner fa-spin"></i> Submitting ${linkRows.length} note(s) directly to Question Bank...</div>`;
+                            BackgroundUploadManager.updateTitle(`Publishing ${linkRows.length} notes...`);
+
+                            let publishedCount = 0;
+                            for (let i = 0; i < linkRows.length; i++) {
+                                const rowItem = linkRows[i];
+                                const noteTitle = rowItem.title || (linkRows.length === 1 ? baseTopic : `${baseTopic} - Part ${i + 1}`);
+                                const driveLink = rowItem.url;
+                                const storage = detectExternalStorage(driveLink);
+                                const searchTokens = buildSearchTokens(courseCode, course.title, noteTitle, facultyName, facultyCode);
+
+                                BackgroundUploadManager.updateTitle(`[${i + 1}/${linkRows.length}] Publishing "${noteTitle}"...`);
+
+                                const newDocRef = await addDoc(collection(db, QUESTION_COLLECTION), {
+                                    course: courseCode.replace(/\s+/g, ' ').toUpperCase(),
+                                    courseCode: courseCode.replace(/\s+/g, ' ').toUpperCase(),
+                                    courseName: course.title,
+                                    title: noteTitle,
+                                    topic: noteTitle,
+                                    credits: Number(course.credits) || Number(course.cr) || (isLab ? 1 : 3),
+                                    isLab: isLab,
+                                    semester,
+                                    trimester: trimester || 0,
+                                    type: 'Notes',
+                                    materialType: 'note',
+                                    materialGroup: 'notes',
+                                    examType: noteTypeName || 'Notes',
+                                    noteCategory: noteCategory || 'faculty',
+                                    noteType: noteTypeName || 'Lecture Notes',
+                                    noteTypeName: noteTypeName || 'Lecture Notes',
+                                    fileUrl: driveLink,
+                                    pdfUrl: driveLink,
+                                    externalProvider: storage.provider,
+                                    externalProviderName: storage.providerName,
+                                    embedUrl: storage.embedUrl,
+                                    isExternalStorage: true,
+                                    facultyId: facultyId || null,
+                                    facultyName: facultyName || '',
+                                    facultyCode: facultyCode || '',
+                                    searchTokens: searchTokens || [],
+                                    status: 'approved',
+                                    approvedAt: serverTimestamp(),
+                                    approvedBy: 'Admin (Direct)',
+                                    submitterName: 'Admin Direct',
+                                    submitterEmail: currentUser?.email || 'admin@uiu.ac.bd',
+                                    courseSearch: `${courseCode} ${course.title} ${noteTitle} ${facultyName} ${facultyCode}`.toLowerCase(),
+                                    submittedAt: serverTimestamp(),
+                                    createdAt: serverTimestamp()
+                                });
+
+                                try {
+                                    await addDoc(collection(db, AUDIT_COLLECTION), {
+                                        action: 'DIRECT_UPLOAD',
+                                        adminEmail: currentUser?.email || 'admin@uiu.ac.bd',
+                                        targetId: newDocRef.id,
+                                        targetCourse: courseCode,
+                                        notes: `Direct uploaded & approved note (Batch ${i + 1}/${linkRows.length}): ${courseCode} (${noteTitle})`,
+                                        timestamp: serverTimestamp()
+                                    });
+                                } catch (auditErr) {
+                                    console.warn('Audit log write skipped:', auditErr);
+                                }
+
+                                publishedCount++;
+                            }
+
+                            BackgroundUploadManager.finish(`Published ${publishedCount} notes!`);
+                            if (typeof showToast === 'function') showToast(`Successfully published ${publishedCount} note(s) directly to Question Bank!`, 'success');
+                            status.innerHTML = `<div style="font-size:0.8rem; color:var(--success); margin-top:0.5rem;"><i class="fas fa-check-circle"></i> Successfully published ${publishedCount} note(s)!</div>`;
+
+                            document.getElementById('adminDirectUploadForm').reset();
+                            const container = document.getElementById('adminMultiLinksContainer');
+                            if (container) container.innerHTML = '';
+                            switchAdminNoteLinkMode('single');
+
+                            const driveGrpEl = document.getElementById('adminUpDriveLinkGroup');
+                            const mainGrpEl = document.getElementById('adminMainFileGroup');
+                            const mainInpEl = document.getElementById('adminUpMainFile');
+                            const driveInpEl = document.getElementById('adminUpDriveLink');
+                            if (driveGrpEl) driveGrpEl.style.display = 'none';
+                            if (mainGrpEl) mainGrpEl.style.display = 'block';
+                            if (mainInpEl) mainInpEl.required = true;
+                            if (driveInpEl) driveInpEl.required = false;
+
+                            setTimeout(() => {
+                                const modal = document.getElementById('adminUploadModal');
+                                if (modal) modal.classList.remove('active');
+                                fetchSubmissions();
+                            }, 1200);
+                            return;
+                        }
+
                         if (!topic) {
                             throw new Error('Please enter a Topic / Title for Lecture Notes.');
                         }
