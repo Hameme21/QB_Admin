@@ -1,0 +1,12 @@
+{
+  "name": "qb-admin",
+  "version": "1.0.0",
+  "description": "UIU CSE Question Bank - Admin Moderation Studio",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {
+    "pdfjs-dist": "^6.4.299"
+  }
+}
