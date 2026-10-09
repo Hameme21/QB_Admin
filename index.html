@@ -4801,6 +4801,7 @@
                 }
                 adminUploadModal.classList.add('active');
                 document.body.style.overflow = 'hidden';
+                if (typeof updateAdminUploadTypeUI === 'function') updateAdminUploadTypeUI();
                 if (typeof updateAdminFacultyRequirementUI === 'function') updateAdminFacultyRequirementUI();
             }
         };
@@ -4809,6 +4810,7 @@
             if (adminUploadModal) {
                 adminUploadModal.classList.remove('active');
                 document.body.style.overflow = '';
+                if (typeof resetAdminDirectUploadForm === 'function') resetAdminDirectUploadForm();
             }
         };
 
@@ -5071,64 +5073,7 @@
         const adminUpTypeSelect = document.getElementById('adminUpType');
         if (adminUpTypeSelect) {
             adminUpTypeSelect.addEventListener('change', () => {
-                const val = adminUpTypeSelect.value;
-                const examGrp = document.getElementById('adminExamGroup');
-                const solGrp = document.getElementById('adminSolGroup');
-                const topicLbl = document.getElementById('adminTopicLabel');
-                const mainLbl = document.getElementById('adminMainFileLabel');
-                const topicInp = document.getElementById('adminUpTopic');
-                const driveGrp = document.getElementById('adminUpDriveLinkGroup');
-                const mainGrp = document.getElementById('adminMainFileGroup');
-                const mainInp = document.getElementById('adminUpMainFile');
-                const driveInp = document.getElementById('adminUpDriveLink');
-
-                if (examGrp) examGrp.style.display = (val === 'Question' || val === 'Solution') ? 'block' : 'none';
-                if (solGrp) solGrp.style.display = val === 'Question' ? 'block' : 'none';
-                const noteGrp = document.getElementById('adminNoteTypeGroup');
-                if (noteGrp) noteGrp.style.display = val === 'Notes' ? 'block' : 'none';
-
-                if (val === 'Notes') {
-                    if (driveGrp) driveGrp.style.display = 'block';
-                    if (mainGrp) mainGrp.style.display = 'none';
-                    if (mainInp) mainInp.required = false;
-                    if (driveInp) driveInp.required = (adminNoteLinkMode === 'single');
-                    if (adminNoteLinkMode === 'multi') {
-                        const container = document.getElementById('adminMultiLinksContainer');
-                        if (container && container.querySelectorAll('.admin-multi-note-row').length === 0) {
-                            addAdminNoteLinkRow();
-                        }
-                    }
-                } else {
-                    if (driveGrp) driveGrp.style.display = 'none';
-                    if (mainGrp) mainGrp.style.display = 'block';
-                    if (mainInp) mainInp.required = true;
-                    if (driveInp) driveInp.required = false;
-                }
-                
-                if (mainLbl) {
-                    if (val === 'Solution') {
-                        mainLbl.textContent = 'Solution File (PDF/Image) *';
-                    } else if (val === 'Notes') {
-                        mainLbl.textContent = 'Notes File (PDF/Image) *';
-                    } else {
-                        mainLbl.textContent = 'Main File (PDF/Image) *';
-                    }
-                }
-
-                if (topicLbl && topicInp) {
-                    if (val === 'Notes') {
-                        topicLbl.innerHTML = 'Topic / Title <span style="color:var(--danger); font-weight:700;">* (Required for Notes)</span>';
-                        topicInp.placeholder = 'e.g. Graph Algorithms Notes, Chapter 3 Summary';
-                    } else if (val === 'Solution') {
-                        topicLbl.innerHTML = 'Topic / Title <span style="color:var(--text-muted); font-weight:normal;">(e.g. Midterm Spring 2024 Solution)</span>';
-                        topicInp.placeholder = 'e.g. Midterm Spring 2024 Solution';
-                    } else {
-                        topicLbl.innerHTML = 'Topic / Title';
-                        topicInp.placeholder = 'e.g. Chapter 3 Summary, Midterm Exam 2025';
-                    }
-                }
-
-                updateAdminFacultyRequirementUI();
+                if (typeof updateAdminUploadTypeUI === 'function') updateAdminUploadTypeUI();
             });
         }
 
@@ -5307,6 +5252,111 @@
             }
         };
 
+        function updateAdminUploadTypeUI() {
+            const adminUpTypeSelect = document.getElementById('adminUpType');
+            const val = adminUpTypeSelect ? adminUpTypeSelect.value : 'Question';
+            const isNotes = (val === 'Notes');
+            const isQuestion = (val === 'Question');
+            const isSolution = (val === 'Solution');
+
+            const examGrp = document.getElementById('adminExamGroup');
+            const solGrp = document.getElementById('adminSolGroup');
+            const topicLbl = document.getElementById('adminTopicLabel');
+            const mainLbl = document.getElementById('adminMainFileLabel');
+            const topicInp = document.getElementById('adminUpTopic');
+            const driveGrp = document.getElementById('adminUpDriveLinkGroup');
+            const mainGrp = document.getElementById('adminMainFileGroup');
+            const mainInp = document.getElementById('adminUpMainFile');
+            const driveInp = document.getElementById('adminUpDriveLink');
+            const noteGrp = document.getElementById('adminNoteTypeGroup');
+
+            // Exam Type: show ONLY for Question & Solution
+            if (examGrp) examGrp.style.display = (isQuestion || isSolution) ? 'block' : 'none';
+
+            // Solution dropzone: show ONLY for Question
+            if (solGrp) solGrp.style.display = isQuestion ? 'block' : 'none';
+
+            // Note Category: show ONLY when notes are selected, otherwise remove / hide it
+            if (noteGrp) {
+                noteGrp.style.display = isNotes ? 'block' : 'none';
+            }
+
+            if (isNotes) {
+                if (driveGrp) driveGrp.style.display = 'block';
+                if (mainGrp) mainGrp.style.display = 'none';
+                if (mainInp) mainInp.required = false;
+                if (driveInp) driveInp.required = (adminNoteLinkMode === 'single');
+                if (adminNoteLinkMode === 'multi') {
+                    const container = document.getElementById('adminMultiLinksContainer');
+                    if (container && container.querySelectorAll('.admin-multi-note-row').length === 0) {
+                        addAdminNoteLinkRow();
+                    }
+                }
+            } else {
+                if (driveGrp) driveGrp.style.display = 'none';
+                if (mainGrp) mainGrp.style.display = 'block';
+                if (mainInp) mainInp.required = true;
+                if (driveInp) driveInp.required = false;
+            }
+
+            if (mainLbl) {
+                if (isSolution) {
+                    mainLbl.textContent = 'Solution File (PDF/Image) *';
+                } else if (isNotes) {
+                    mainLbl.textContent = 'Notes File (PDF/Image) *';
+                } else {
+                    mainLbl.textContent = 'Main File (PDF/Image) *';
+                }
+            }
+
+            if (topicLbl && topicInp) {
+                if (isNotes) {
+                    topicLbl.innerHTML = 'Topic / Title <span style="color:var(--danger); font-weight:700;">* (Required for Notes)</span>';
+                    topicInp.placeholder = 'e.g. Graph Algorithms Notes, Chapter 3 Summary';
+                } else if (isSolution) {
+                    topicLbl.innerHTML = 'Topic / Title <span style="color:var(--text-muted); font-weight:normal;">(e.g. Midterm Spring 2024 Solution)</span>';
+                    topicInp.placeholder = 'e.g. Midterm Spring 2024 Solution';
+                } else {
+                    topicLbl.innerHTML = 'Topic / Title';
+                    topicInp.placeholder = 'e.g. Chapter 3 Summary, Midterm Exam 2025';
+                }
+            }
+
+            updateAdminFacultyRequirementUI();
+        }
+
+        function resetAdminDirectUploadForm() {
+            const form = document.getElementById('adminDirectUploadForm');
+            if (form) form.reset();
+
+            const adminFacSearchEl = document.getElementById('adminUpFacultySearch');
+            const adminFacClearEl = document.getElementById('adminUpFacultyClearBtn');
+            const adminFacIdEl = document.getElementById('adminUpFacultyId');
+            const adminFacNameEl = document.getElementById('adminUpFacultyName');
+            const adminFacCodeEl = document.getElementById('adminUpFacultyCode');
+            if (adminFacSearchEl) adminFacSearchEl.value = '';
+            if (adminFacClearEl) adminFacClearEl.style.display = 'none';
+            if (adminFacIdEl) adminFacIdEl.value = '';
+            if (adminFacNameEl) adminFacNameEl.value = '';
+            if (adminFacCodeEl) adminFacCodeEl.value = '';
+
+            resetAdminDropzone('adminMainDropzone', 'adminUpMainFile', 'adminMainDropContent');
+            resetAdminDropzone('adminSolDropzone', 'adminUpSolFile', 'adminSolDropContent');
+
+            const multiContainer = document.getElementById('adminMultiLinksContainer');
+            if (multiContainer) multiContainer.innerHTML = '';
+            switchAdminNoteLinkMode('single');
+
+            const status = document.getElementById('adminUploadStatus');
+            if (status) status.innerHTML = '';
+
+            // Synchronize and remove Note Category when material type reverts to Question
+            updateAdminUploadTypeUI();
+        }
+
+        // Initialize upload type UI state
+        updateAdminUploadTypeUI();
+
         const adminDriveInp = document.getElementById('adminUpDriveLink');
         if (adminDriveInp) {
             adminDriveInp.addEventListener('input', () => {
@@ -5453,19 +5503,7 @@
                             if (typeof showToast === 'function') showToast(`Successfully published ${publishedCount} note(s) directly to Question Bank!`, 'success');
                             status.innerHTML = `<div style="font-size:0.8rem; color:var(--success); margin-top:0.5rem;"><i class="fas fa-check-circle"></i> Successfully published ${publishedCount} note(s)!</div>`;
 
-                            document.getElementById('adminDirectUploadForm').reset();
-                            const container = document.getElementById('adminMultiLinksContainer');
-                            if (container) container.innerHTML = '';
-                            switchAdminNoteLinkMode('single');
-
-                            const driveGrpEl = document.getElementById('adminUpDriveLinkGroup');
-                            const mainGrpEl = document.getElementById('adminMainFileGroup');
-                            const mainInpEl = document.getElementById('adminUpMainFile');
-                            const driveInpEl = document.getElementById('adminUpDriveLink');
-                            if (driveGrpEl) driveGrpEl.style.display = 'none';
-                            if (mainGrpEl) mainGrpEl.style.display = 'block';
-                            if (mainInpEl) mainInpEl.required = true;
-                            if (driveInpEl) driveInpEl.required = false;
+                            resetAdminDirectUploadForm();
 
                             setTimeout(() => {
                                 const modal = document.getElementById('adminUploadModal');
@@ -5542,16 +5580,7 @@
 
                         BackgroundUploadManager.finish();
                         if (typeof showToast === 'function') showToast('Note published directly to Question Bank!', 'success');
-                        status.innerHTML = '<div style="font-size:0.8rem; color:var(--success); margin-top:0.5rem;"><i class="fas fa-check-circle"></i> Note published successfully!</div>';
-                        document.getElementById('adminDirectUploadForm').reset();
-                        const driveGrpEl = document.getElementById('adminUpDriveLinkGroup');
-                        const mainGrpEl = document.getElementById('adminMainFileGroup');
-                        const mainInpEl = document.getElementById('adminUpMainFile');
-                        const driveInpEl = document.getElementById('adminUpDriveLink');
-                        if (driveGrpEl) driveGrpEl.style.display = 'none';
-                        if (mainGrpEl) mainGrpEl.style.display = 'block';
-                        if (mainInpEl) mainInpEl.required = true;
-                        if (driveInpEl) driveInpEl.required = false;
+                        resetAdminDirectUploadForm();
 
                         setTimeout(() => {
                             const modal = document.getElementById('adminUploadModal');
@@ -5671,19 +5700,6 @@
                     BackgroundUploadManager.updateTitle('Published Successfully!');
                     showToast('Question uploaded and published directly!', 'success');
                     closeAdminUploadModal();
-                    adminUploadForm.reset();
-                    const adminFacSearchEl = document.getElementById('adminUpFacultySearch');
-                    const adminFacClearEl = document.getElementById('adminUpFacultyClearBtn');
-                    const adminFacIdEl = document.getElementById('adminUpFacultyId');
-                    const adminFacNameEl = document.getElementById('adminUpFacultyName');
-                    const adminFacCodeEl = document.getElementById('adminUpFacultyCode');
-                    if (adminFacSearchEl) adminFacSearchEl.value = '';
-                    if (adminFacClearEl) adminFacClearEl.style.display = 'none';
-                    if (adminFacIdEl) adminFacIdEl.value = '';
-                    if (adminFacNameEl) adminFacNameEl.value = '';
-                    if (adminFacCodeEl) adminFacCodeEl.value = '';
-                    resetAdminDropzone('adminMainDropzone', 'adminUpMainFile', 'adminMainDropContent');
-                    resetAdminDropzone('adminSolDropzone', 'adminUpSolFile', 'adminSolDropContent');
 
                 } catch (err) {
                     console.error('Direct upload failed:', err);
