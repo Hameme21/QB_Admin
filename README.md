@@ -14,21 +14,29 @@ The admin dashboard for the [UIU Question Bank](https://github.com/Hameme21/UIU_
 - 🧭 **Full UIU CSE curriculum reference** — course codes, titles, credits, and trimester mapping built in for tagging/validation
 - ⚡ **Real-time updates** via Firestore listeners
 
+## Multiple PDF Upload
+
+In **Upload Question**, choose **Multiple PDFs (Auto-detect Details)**, or select/drop several PDFs in the main file area. The batch uploader also accepts PDFs and ZIP archives together.
+
+Filenames such as `OOP_Mid_251.pdf`, `CSE 1115_Final_241.pdf`, and `Object Oriented Programming_Final_Fall 2024_Trimester 4.pdf` fill in the course code/name, exam, semester, and curriculum trimester. Faculty names or initials are recognized when available. Review and edit each row before publishing; missing details must be completed. Files ending in `_sol` or `_solution` pair with their questions. Each file must be at most 5MB.
+
+Run `npm test` to check filename detection and batch publishing with in-memory storage adapters.
+
 ## Tech Stack
 
-- **Frontend:** Vanilla HTML/CSS/JS — single-file architecture (`index.html`)
+- **Frontend:** Vanilla HTML/CSS/JS — `index.html` with filename detection in `question-upload.mjs`
 - **Auth & Database:** Firebase (Authentication + Firestore)
 - **File storage:** Cloudinary (asset preview/verification)
 - **Backend API:** Node.js service hosted on Render
 
 ## Getting Started
 
-This is a static single-file app — no build step required.
+This is a static app — no build step required.
 
 ```bash
 git clone https://github.com/Hameme21/QB_Admin.git
 cd QB_Admin
-# open index.html directly, or serve it locally
+# serve the app locally (required for JavaScript modules)
 npx serve .
 ```
 

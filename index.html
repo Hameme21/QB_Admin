@@ -1606,7 +1606,7 @@
                     <i class="fas fa-history"></i> Audit Logs
                 </a>
                 <button type="button" class="nav-item" id="sidebar-zip-upload-btn" style="background:none; border:none; width:100%; text-align:left; cursor:pointer; font-family:inherit;">
-                    <i class="fas fa-file-archive" style="color:var(--warning);"></i> Bulk ZIP Upload
+                    <i class="fas fa-file-archive" style="color:var(--warning);"></i> Bulk PDF / ZIP Upload
                 </button>
                 <button type="button" class="nav-item" id="sidebar-upload-btn" style="background:none; border:none; width:100%; text-align:left; cursor:pointer; font-family:inherit;">
                     <i class="fas fa-cloud-upload-alt"></i> Direct Upload
@@ -1636,8 +1636,8 @@
                 <h1 class="header-title" id="page-title">Dashboard</h1>
                 
                 <div class="header-actions">
-                    <button class="btn btn-warning header-action-btn" id="open-admin-zip-upload-btn" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:white; border:none;" title="Batch Upload Questions from ZIP File">
-                        <i class="fas fa-file-archive"></i> <span class="btn-text">Bulk ZIP Upload</span>
+                    <button class="btn btn-warning header-action-btn" id="open-admin-zip-upload-btn" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:white; border:none;" title="Batch Upload Questions from PDFs or ZIP Files">
+                        <i class="fas fa-file-archive"></i> <span class="btn-text">Bulk PDF / ZIP Upload</span>
                     </button>
                     <button class="btn btn-primary header-action-btn" id="open-admin-upload-btn" title="Upload Question Directly">
                         <i class="fas fa-plus-circle"></i> <span class="btn-text">Upload Question</span>
@@ -2100,6 +2100,12 @@
             </div>
             <div class="modal-body" style="padding:1.25rem 1.5rem; display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; max-height:calc(92vh - 70px); max-height:calc(92dvh - 70px); box-sizing:border-box; width:100%;">
                 <form id="adminDirectUploadForm">
+                    <div style="margin-bottom:1rem; padding:0.75rem; border:1px solid var(--border); border-radius:var(--radius);">
+                        <button type="button" class="btn btn-outline" id="admin-upload-multiple-pdfs">
+                            <i class="fas fa-file-pdf"></i> Multiple PDFs (Auto-detect Details)
+                        </button>
+                        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Select several PDFs together. Review the course, exam, semester, trimester and faculty detected from each filename before publishing.</p>
+                    </div>
                     <div class="form-row-2col">
                         <div class="form-group" style="position:relative;">
                             <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;">Course Code / Title *</label>
@@ -2133,6 +2139,10 @@
                                 <option value="Final">Final</option>
                                 <option value="Quiz 1">Quiz 1</option>
                                 <option value="Quiz 2">Quiz 2</option>
+                                <option value="Quiz 3">Quiz 3</option>
+                                <option value="Quiz 4">Quiz 4</option>
+                                <option value="Quiz">Quiz</option>
+                                <option value="Lab">Lab</option>
                                 <option value="Assignment">Assignment</option>
                             </select>
                         </div>
@@ -2235,10 +2245,10 @@
                     <div class="form-group" id="adminMainFileGroup" style="margin-bottom:0.75rem;">
                         <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:0.35rem;" id="adminMainFileLabel">Main File (PDF/Image) *</label>
                         <div class="file-drop-area" id="adminMainDropzone" onclick="document.getElementById('adminUpMainFile').click()" style="padding:1rem;">
-                            <input type="file" id="adminUpMainFile" accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.rtf,.png,.jpg,.jpeg,.zip" required style="display:none;">
+                            <input type="file" id="adminUpMainFile" accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.rtf,.png,.jpg,.jpeg,.zip" multiple required style="display:none;">
                             <div id="adminMainDropContent">
                                 <i class="fas fa-cloud-upload-alt" style="font-size:1.5rem; color:var(--primary); margin-bottom:0.25rem;"></i>
-                                <div style="font-weight:600; font-size:0.8rem;">Drag & drop file here or <span style="color:var(--primary); text-decoration:underline;">browse</span></div>
+                                <div style="font-weight:600; font-size:0.8rem;">Drag & drop a file or multiple PDFs here, or <span style="color:var(--primary); text-decoration:underline;">browse</span></div>
                                 <div style="font-size:0.7rem; color:var(--text-muted);">Supports PPT, PPTX, PDF, DOC, DOCX, XLS, Images (Max 5MB)</div>
                             </div>
                         </div>
@@ -2275,7 +2285,7 @@
         <div class="zip-modal-card">
             <div class="modal-header" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent);">
                 <h3 class="modal-title" style="display:flex; align-items:center; gap:0.5rem; color:var(--warning);">
-                    <i class="fas fa-file-archive"></i> Bulk ZIP Question Uploader (Automatic Detection)
+                    <i class="fas fa-copy"></i> Multiple PDF / ZIP Upload (Automatic Detection)
                 </h3>
                 <button class="icon-btn" id="btn-close-admin-zip"><i class="fas fa-times"></i></button>
             </div>
@@ -2283,14 +2293,15 @@
                 <!-- Step 1: Drag & Drop ZIP File -->
                 <div id="zip-drop-section" style="width:100%; box-sizing:border-box;">
                     <div class="zip-drop-area" id="zipDropzone" onclick="document.getElementById('zipFileInput').click()">
-                        <input type="file" id="zipFileInput" accept=".zip" multiple style="display:none;">
+                        <input type="file" id="zipFileInput" accept=".pdf,.zip" multiple style="display:none;">
                         <i class="fas fa-file-archive" style="font-size:3rem; color:var(--warning); margin-bottom:0.75rem;"></i>
-                        <h3 style="margin-bottom:0.4rem; font-size:1.15rem; color:var(--text-main);">Drag & drop question archive (.ZIP) file(s) here</h3>
-                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">Or click to browse ZIP files from your computer (Multiple files supported)</p>
+                        <h3 style="margin-bottom:0.4rem; font-size:1.15rem; color:var(--text-main);">Drag & drop multiple PDFs or ZIP archives here</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">Or click to browse. Each PDF becomes a separate entry with editable details (max 5MB per PDF).</p>
                         <div style="display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
                             <span class="zip-pill-tag"><i class="fas fa-magic" style="color:var(--warning);"></i> Auto-Detects Course Code</span>
                             <span class="zip-pill-tag"><i class="fas fa-pen-alt" style="color:var(--warning);"></i> Auto-Detects Exam Name (Midterm/Final/Quiz)</span>
                             <span class="zip-pill-tag"><i class="fas fa-calendar" style="color:var(--warning);"></i> Auto-Detects Semester</span>
+                            <span class="zip-pill-tag"><i class="fas fa-graduation-cap" style="color:var(--warning);"></i> Course Name &amp; Trimester</span>
                             <span class="zip-pill-tag"><i class="fas fa-link" style="color:var(--warning);"></i> Auto-Pairs Solutions</span>
                         </div>
                     </div>
@@ -2302,6 +2313,8 @@
                         <ul style="font-size:0.8rem; color:var(--text-muted); line-height:1.6; padding-left:1.25rem;">
                             <li><strong>Standard formats:</strong> <code>CSE 1115_Midterm_241.pdf</code>, <code>MATH 2201 - Final Exam - Spring 2024.pdf</code></li>
                             <li><strong>Short names / Aliases:</strong> <code>OOP_Mid_251.pdf</code>, <code>DLD_Final_233.pdf</code>, <code>DSA_Quiz1_242.pdf</code></li>
+                            <li><strong>Full course names:</strong> <code>Object Oriented Programming_Final_Fall 2024_Trimester 4.pdf</code>. Trimester defaults to the course's curriculum trimester when recognized.</li>
+                            <li><strong>Review required:</strong> Unrecognized course, exam, semester or trimester fields stay blank for you to complete.</li>
                             <li><strong>Folder structures:</strong> <code>CSE 1111/Midterm/Question.pdf</code>, <code>DBMS/241/Final.pdf</code></li>
                             <li><strong>Solution pairing:</strong> Files ending with <code>_solution.pdf</code> or <code>_sol.pdf</code> are automatically linked to their questions!</li>
                         </ul>
@@ -2317,9 +2330,9 @@
                             <span class="zip-stat-pill" style="color:var(--danger);" id="zip-duplicate-stat"><i class="fas fa-exclamation-circle"></i> <span id="zip-stat-duplicates">0</span> Already Uploaded</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                            <input type="file" id="zipAddMoreInput" accept=".zip" multiple style="display:none;">
-                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem; border-color:var(--warning); color:var(--warning); font-weight:600;" id="btn-add-more-zip-top" title="Add another ZIP archive to this queue">
-                                <i class="fas fa-plus"></i> Add Another ZIP
+                            <input type="file" id="zipAddMoreInput" accept=".pdf,.zip" multiple style="display:none;">
+                            <button type="button" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.8rem; border-color:var(--warning); color:var(--warning); font-weight:600;" id="btn-add-more-zip-top" title="Add more PDFs or ZIP archives to this queue">
+                                <i class="fas fa-plus"></i> Add More PDFs / ZIPs
                             </button>
                             <button type="button" class="btn btn-danger" id="btn-remove-duplicates" style="display:none; padding:0.3rem 0.75rem; font-size:0.8rem; background:var(--danger); color:white; border:none;" title="Remove all files that already exist in the Question Bank from the upload queue">
                                 <i class="fas fa-trash-alt"></i> Remove Already Uploaded (<span id="btn-dup-count">0</span>)
@@ -2381,6 +2394,8 @@
                                     <th style="min-width:180px;">Course Code</th>
                                     <th style="min-width:130px;">Exam Name</th>
                                     <th style="min-width:130px;">Semester</th>
+                                    <th style="min-width:120px;">Trimester</th>
+                                    <th style="min-width:180px;">Faculty</th>
                                     <th style="min-width:110px;">Type</th>
                                     <th style="min-width:160px;">Topic / Title</th>
                                     <th>Solution</th>
@@ -2411,7 +2426,7 @@
                         <button type="button" class="btn btn-outline" id="btn-cancel-zip-upload">Cancel</button>
                         <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
                             <button type="button" class="btn btn-outline" id="btn-add-another-zip" style="padding:0.45rem 1rem; font-size:0.85rem; border-color:var(--warning); color:var(--warning); font-weight:700; display:inline-flex; align-items:center; gap:0.4rem;">
-                                <i class="fas fa-file-archive"></i> Add Another ZIP File
+                                <i class="fas fa-plus"></i> Add More PDFs / ZIPs
                             </button>
                             <button type="button" class="btn btn-primary" id="btn-start-zip-upload" style="background:linear-gradient(135deg, var(--warning), #d97706); border:none; display:inline-flex; align-items:center; gap:0.5rem; font-weight:700;">
                                 <i class="fas fa-cloud-upload-alt"></i> Publish Selected (<span id="zip-selected-count">0</span>) Questions
@@ -2427,6 +2442,7 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script type="module">
+        import { detectQuestionMetadata, matchesQuestionSolution, missingQuestionDetails } from './question-upload.mjs';
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
         import {
             getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
@@ -5071,6 +5087,8 @@
                     if (selType === 'Notes' && topicInp) {
                         const detected = extractNoteTopicFromFileName(file.name);
                         if (detected) topicInp.value = detected;
+                    } else if (/\.pdf$/i.test(file.name)) {
+                        applyDetectedDirectDetails(file.name);
                     }
                 }
 
@@ -5084,7 +5102,7 @@
                         <div style="display:flex; align-items:center; gap:0.6rem; overflow:hidden;">
                             <i class="${iconClass.startsWith('fa') ? 'fas ' + iconClass : iconClass}" style="font-size:1.6rem; color:${iconColor}; flex-shrink:0;"></i>
                             <div style="overflow:hidden;">
-                                <div style="font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:var(--text-main); font-size:0.85rem;">${file.name}</div>
+                                <div style="font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:var(--text-main); font-size:0.85rem;">${escapeUploadHtml(file.name)}</div>
                                 <div style="font-size:0.7rem; color:var(--text-muted);">${sizeMB} MB • Ready (&lt; 5MB)</div>
                             </div>
                         </div>
@@ -5110,17 +5128,27 @@
                 });
             });
 
+            function selectFiles(files) {
+                if (inputId === 'adminUpMainFile' && files.length > 1) {
+                    input.value = '';
+                    openMultiplePdfUpload();
+                    handleZipFileSelection(files);
+                    return;
+                }
+                updatePreview(files[0]);
+            }
+
             dropzone.addEventListener('drop', (e) => {
                 const dt = e.dataTransfer;
                 if (dt && dt.files && dt.files.length > 0) {
                     input.files = dt.files;
-                    updatePreview(dt.files[0]);
+                    selectFiles(Array.from(dt.files));
                 }
             });
 
             input.addEventListener('change', () => {
                 if (input.files && input.files.length > 0) {
-                    updatePreview(input.files[0]);
+                    selectFiles(Array.from(input.files));
                 }
             });
         }
@@ -6044,11 +6072,47 @@
         const openAdminZipModal = () => {
             if (adminZipUploadModal) {
                 populateBatchCourseDropdown();
-                resetZipUploader();
                 adminZipUploadModal.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
         };
+
+        function openMultiplePdfUpload() {
+            adminUploadModal.classList.remove('active');
+            openAdminZipModal();
+        }
+
+        document.getElementById('admin-upload-multiple-pdfs').addEventListener('click', openMultiplePdfUpload);
+
+        function applyDetectedDirectDetails(fileName) {
+            const item = parseQuestionMetadata(fileName, fileName);
+            if (item.courseCode) {
+                document.getElementById('adminUpCourse').value = item.courseCode;
+                document.getElementById('adminUpCourseSearch').value = `${item.courseCode} - ${item.courseName}`;
+            }
+            for (const [id, value] of Object.entries({
+                adminUpSemester: item.semester, adminUpTrimester: item.trimester,
+                adminUpExamType: item.examType, adminUpType: item.materialType
+            })) {
+                const select = document.getElementById(id);
+                if (value === '' || value == null) continue;
+                if (!Array.from(select.options).some(option => option.value === String(value))) {
+                    select.add(new Option(String(value), String(value)));
+                }
+                select.value = String(value);
+            }
+            document.getElementById('adminUpTopic').value = item.topic;
+            if (item.facultyId != null) {
+                document.getElementById('adminUpFacultyId').value = item.facultyId;
+                document.getElementById('adminUpFacultyName').value = item.facultyName;
+                document.getElementById('adminUpFacultyCode').value = item.facultyCode;
+                document.getElementById('adminUpFacultySearch').value = `${item.facultyName} (${item.facultyCode})`;
+                document.getElementById('adminUpFacultyClearBtn').style.display = 'block';
+            }
+            if (item.noteCategory) document.getElementById('adminUpNoteType').value = item.noteCategory;
+            updateAdminUploadTypeUI();
+            updateAdminFacultyRequirementUI();
+        }
 
         const closeAdminZipModal = () => {
             if (adminZipUploadModal) {
@@ -6160,344 +6224,100 @@
 
         // Automatic Filename & Path Parsing Engine (Specialized for courseCode_Exam_Semester.pdf format)
         function parseQuestionMetadata(fullPath, fileName) {
-            const cleanPath = (fullPath || '').replace(/\\/g, '/');
-            const baseName = fileName.replace(/\.[^/.]+$/, ""); // strip extension
-            
-            // 1. Check if solution file (e.g. EEE2113_Mid_172_Sol.pdf or EEE2113_Mid_172_Solution.pdf)
-            const isSolution = /(?:^|[_\s\-\(\[])(?:solution|sol|ans|answer|solved)(?:[_\s\-\)\]]|$)/i.test(baseName) ||
-                               cleanPath.toLowerCase().includes('/solution/') ||
-                               cleanPath.toLowerCase().includes('/solutions/');
-
-            // Clean base name without solution keywords for core parsing
-            const cleanBase = baseName.replace(/(?:_|-|\s)?(?:solution|sol|ans|answer|solved)/gi, '').trim();
-
-            let detectedCourse = null;
-            let detectedExam = null;
-            let detectedSemester = null;
-
-            // Strategy 1: Direct Delimited Token Parsing (e.g. EEE2113_Mid_172, EEE2113_Final_171, CSE1115_Mid_241)
-            const tokens = cleanBase.split(/[_\-\s]+/).filter(Boolean);
-
-            for (let i = 0; i < tokens.length; i++) {
-                const token = tokens[i];
-                
-                // Test Course code token e.g. EEE2113, CSE1115, MATH2201, BDS1201
-                const cMatch = token.match(/^([A-Za-z]{2,4})\s*([0-9]{4}[A-Za-z]?)$/i);
-                if (cMatch && !detectedCourse) {
-                    const formatted = `${cMatch[1].toUpperCase()} ${cMatch[2].toUpperCase()}`;
-                    detectedCourse = CURRICULUM.find(c => c.code.replace(/\s+/g, '') === formatted.replace(/\s+/g, '')) || { code: formatted, title: getCourseTitle(formatted), trimester: 0 };
-                    continue;
-                }
-
-                // Test 3-digit semester code e.g. 172, 171, 183, 241, 233, 251 (years 10-39, term 1-3)
-                const sMatch = token.match(/^([0-9]{2})([1-3])$/);
-                if (sMatch && !detectedSemester) {
-                    detectedSemester = sMatch[0];
-                    continue;
-                }
-
-                // Test Exam type token e.g. Mid, Final, Quiz1, Lab, etc.
-                if (!detectedExam) {
-                    const tLow = token.toLowerCase();
-                    if (tLow.startsWith('mid')) detectedExam = 'Midterm';
-                    else if (tLow.startsWith('fin')) detectedExam = 'Final';
-                    else if (/^q(?:uiz)?[-_]?1$/i.test(token) || /^ct[-_]?1$/i.test(token)) detectedExam = 'Quiz 1';
-                    else if (/^q(?:uiz)?[-_]?2$/i.test(token) || /^ct[-_]?2$/i.test(token)) detectedExam = 'Quiz 2';
-                    else if (/^q(?:uiz)?[-_]?3$/i.test(token)) detectedExam = 'Quiz 3';
-                    else if (/^q(?:uiz)?[-_]?4$/i.test(token)) detectedExam = 'Quiz 4';
-                    else if (/^q(?:uiz)?$/i.test(token) || /^ct$/i.test(token)) detectedExam = 'Quiz';
-                    else if (/^lab/i.test(token)) detectedExam = 'Lab';
-                    else if (/^note/i.test(token)) detectedExam = 'Notes';
-                    else if (/^assign/i.test(token) || /^hw/i.test(token)) detectedExam = 'Assignment';
-                }
-            }
-
-            // Strategy 2: Fallback Regex & Alias Scan over full path and filename
-            const fullText = `${cleanPath} ${baseName}`;
-
-            if (!detectedCourse) {
-                const codeMatch = fullText.match(/\b([A-Za-z]{2,4})\s*[-_]?\s*([0-9]{4}[A-Za-z]?)\b/i);
-                if (codeMatch) {
-                    const formatted = `${codeMatch[1].toUpperCase()} ${codeMatch[2].toUpperCase()}`;
-                    detectedCourse = CURRICULUM.find(c => c.code.replace(/\s+/g, '') === formatted.replace(/\s+/g, '')) || { code: formatted, title: getCourseTitle(formatted), trimester: 0 };
-                }
-            }
-
-            if (!detectedCourse) {
-                for (const course of CURRICULUM) {
-                    const cleanCode = course.code.replace(/\s+/g, '');
-                    if (new RegExp(`\\b${cleanCode}\\b`, 'i').test(fullText)) {
-                        detectedCourse = course;
-                        break;
-                    }
-                    for (const alias of (course.aliases || [])) {
-                        if (alias.length >= 2 && new RegExp(`\\b${alias.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i').test(fullText)) {
-                            detectedCourse = course;
-                            break;
-                        }
-                    }
-                    if (detectedCourse) break;
-                }
-            }
-
-            // Exam detection fallback
-            let examType = detectedExam || 'Midterm';
-            let materialType = 'Question';
-
-            if (!detectedExam) {
-                if (/\b(?:midterm|mid[-_ ]?term|mid)\b/i.test(fullText)) {
-                    examType = 'Midterm';
-                } else if (/\b(?:final|finals|final[-_ ]?term|fin)\b/i.test(fullText)) {
-                    examType = 'Final';
-                } else if (/\b(?:quiz[-_ ]?1|q1|ct[-_ ]?1)\b/i.test(fullText)) {
-                    examType = 'Quiz 1';
-                } else if (/\b(?:quiz[-_ ]?2|q2|ct[-_ ]?2)\b/i.test(fullText)) {
-                    examType = 'Quiz 2';
-                } else if (/\b(?:quiz[-_ ]?3|q3|ct[-_ ]?3)\b/i.test(fullText)) {
-                    examType = 'Quiz 3';
-                } else if (/\b(?:quiz[-_ ]?4|q4|ct[-_ ]?4)\b/i.test(fullText)) {
-                    examType = 'Quiz 4';
-                } else if (/\b(?:quiz|class[-_ ]?test|ct)\b/i.test(fullText)) {
-                    examType = 'Quiz';
-                } else if (/\b(?:lab[-_ ]?final|lab[-_ ]?mid|lab[-_ ]?exam|lab[-_ ]?task|lab)\b/i.test(fullText)) {
-                    examType = 'Lab';
-                    materialType = 'Question';
-                } else if (/\b(?:uni(?:versity)?[-_ ]?notes?|central[-_ ]?notes?|uiu[-_ ]?notes?)\b/i.test(fullText)) {
-                    examType = "University's Notes";
-                    materialType = 'Notes';
-                } else if (/\b(?:faculty[-_ ]?notes?|teacher[-_ ]?notes?)\b/i.test(fullText)) {
-                    examType = "Faculty's Notes";
-                    materialType = 'Notes';
-                } else if (/\b(?:notes?|lecture[-_ ]?notes?|summary|slides?)\b/i.test(fullText)) {
-                    examType = /\b(?:uni|university|central)\b/i.test(fullText) ? "University's Notes" : "Faculty's Notes";
-                    materialType = 'Notes';
-                } else if (/\b(?:assignment[-_ ]?\d*|hw[-_ ]?\d*)\b/i.test(fullText)) {
-                    examType = 'Assignment';
-                }
-            } else {
-                if (examType === 'Lab') materialType = 'Question';
-                if (examType === 'Notes') {
-                    materialType = 'Notes';
-                    examType = /\b(?:uni|university|central)\b/i.test(fullText) ? "University's Notes" : "Faculty's Notes";
-                }
-            }
-
-            let noteCategory = null;
-            let noteTypeName = null;
-            if (materialType === 'Notes') {
-                if (examType === "University's Notes" || /\b(?:uni|university|central)\b/i.test(fullText)) {
-                    noteCategory = 'university';
-                    noteTypeName = "University's Notes";
-                    examType = "University's Notes";
-                } else {
-                    noteCategory = 'faculty';
-                    noteTypeName = "Faculty's Notes";
-                    examType = "Faculty's Notes";
-                }
-            }
-
-            // Semester detection fallback: supports 151, 162, 171, 172, 183, 241, 251, etc.
-            let semester = detectedSemester || '';
-            let trimester = detectedCourse ? (detectedCourse.trimester || 1) : 1;
-
-            if (!semester) {
-                const semCodeMatch = fullText.match(/\b([1-3][0-9])([1-3])\b/);
-                if (semCodeMatch) {
-                    semester = semCodeMatch[0];
-                } else {
-                    const textSemMatch = fullText.match(/\b(Spring|Summer|Fall|Sp|Su|Fa)\s*[-_]?\s*(20[1-3][0-9]|[1-3][0-9])\b/i);
-                    if (textSemMatch) {
-                        const seasonStr = textSemMatch[1].toLowerCase();
-                        let yr = textSemMatch[2];
-                        if (yr.length === 4) yr = yr.slice(2);
-                        let sDigit = '1';
-                        if (seasonStr.startsWith('su')) sDigit = '2';
-                        else if (seasonStr.startsWith('fa')) sDigit = '3';
-                        semester = `${yr}${sDigit}`;
-                    }
-                }
-            }
-
-            if (!semester && ADMIN_SEMESTERS.length > 0) {
-                semester = ADMIN_SEMESTERS[ADMIN_SEMESTERS.length - 1].code;
-            }
-
-            // Trimester override if explicitly specified in path or filename
-            const trimMatch = fullText.match(/\b(?:trimester|tri|t)\s*[-_]?\s*([1-9]|1[0-2])\b/i);
-            if (trimMatch) {
-                trimester = parseInt(trimMatch[1], 10);
-            }
-
-            // Topic generation
-            let topic = '';
-            if (materialType === 'Question') {
-                topic = `${examType} Question ${semester ? decodeSemester(semester) : ''}`.trim();
-            } else if (materialType === 'Solution') {
-                topic = `${examType} Solution ${semester ? decodeSemester(semester) : ''}`.trim();
-            } else {
-                // In notes, detect topic as the file name
-                const detectedNoteTopic = extractNoteTopicFromFileName(fileName || cleanPath);
-                topic = detectedNoteTopic || `${noteTypeName || examType} ${detectedCourse ? detectedCourse.code : ''}`.trim();
-            }
-
-            return {
-                isSolution,
-                courseCode: detectedCourse ? detectedCourse.code : '',
-                courseName: detectedCourse ? detectedCourse.title : '',
-                examType,
-                materialType,
-                noteCategory,
-                noteTypeName,
-                semester,
-                trimester,
-                topic,
-                originalFilename: fileName,
-                filePath: cleanPath
-            };
+            return detectQuestionMetadata(fullPath, fileName, CURRICULUM, facultiesList);
         }
 
-        async function handleZipFileSelection(inputFiles) {
-            if (!inputFiles) return;
-            const fileList = Array.isArray(inputFiles)
-                ? inputFiles
-                : (inputFiles instanceof FileList ? Array.from(inputFiles) : [inputFiles]);
+        function escapeUploadHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[char]);
+        }
 
-            const zipFiles = fileList.filter(f => f && f.name && f.name.toLowerCase().endsWith('.zip'));
-
-            if (zipFiles.length === 0) {
-                showToast('Please select valid .ZIP archive file(s).', 'error');
-                return;
+        async function getQueuedUploadFile(item) {
+            let file = item.nativeFile;
+            if (!file) {
+                const blob = await item.zipEntry.async('blob');
+                const extension = item.originalFilename.split('.').pop().toLowerCase();
+                const type = extension === 'pdf' ? 'application/pdf' : extension === 'png' ? 'image/png' : 'image/jpeg';
+                file = new File([blob], item.originalFilename, { type });
             }
+            if (file.size > 5 * 1024 * 1024) throw new Error(`${file.name} exceeds the 5MB per-file limit.`);
+            return file;
+        }
 
-            if (typeof JSZip === 'undefined') {
-                showToast('JSZip library is loading. Please try again in a moment.', 'warning');
-                return;
-            }
-
-            showToast(`Extracting ${zipFiles.length} ZIP archive${zipFiles.length > 1 ? 's' : ''}...`, 'info');
-
-            try {
-                const validExtensions = ['.pdf', '.png', '.jpg', '.jpeg'];
-                const newRawFileList = [];
-                const newSolutionList = [];
-
-                for (let fIdx = 0; fIdx < zipFiles.length; fIdx++) {
-                    const file = zipFiles[fIdx];
-                    try {
-                        const zip = new JSZip();
-                        const zipInstance = await zip.loadAsync(file);
-
-                        for (const [relativePath, zipEntry] of Object.entries(zipInstance.files)) {
-                            if (zipEntry.dir) continue;
-                            if (relativePath.includes('__MACOSX') || relativePath.includes('.DS_Store') || relativePath.includes('Thumbs.db')) continue;
-
-                            const ext = relativePath.slice(relativePath.lastIndexOf('.')).toLowerCase();
-                            if (!validExtensions.includes(ext)) continue;
-
-                            const fileName = relativePath.split('/').pop();
-                            const parsed = parseQuestionMetadata(relativePath, fileName);
-                            parsed.zipEntry = zipEntry;
-                            parsed.sourceZipName = file.name;
-
-                            if (parsed.isSolution) {
-                                newSolutionList.push(parsed);
-                            } else {
-                                newRawFileList.push(parsed);
-                            }
-                        }
-                    } catch (zipErr) {
-                        console.error(`Error loading ZIP ${file.name}:`, zipErr);
-                        showToast(`Could not read ${file.name}: ${zipErr.message}`, 'error');
-                    }
-                }
-
-                if (newRawFileList.length === 0 && newSolutionList.length === 0) {
-                    showToast('No PDF or Image question files found inside the selected ZIP file(s).', 'warning');
-                    return;
-                }
-
-                // If only solutions were found in these ZIPs, try to pair or treat as questions
-                if (newRawFileList.length === 0 && newSolutionList.length > 0) {
-                    newSolutionList.forEach(s => {
-                        const sBase = s.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const matchingQ = parsedZipEntries.find(q => {
-                            if (q.pairedSolution) return false;
-                            const qBase = q.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                            return sBase.includes(qBase) || (s.courseCode && s.courseCode === q.courseCode && s.examType === q.examType && s.semester === q.semester);
-                        });
-                        if (matchingQ) {
-                            matchingQ.pairedSolution = s;
-                        } else {
-                            s.isSolution = false;
-                            newRawFileList.push(s);
-                        }
-                    });
-                }
-
-                // Collect solutions across all ZIPs
-                parsedZipSolutions.push(...newSolutionList);
-
-                // Solution Pairing Engine: pair new questions with all available solutions
-                newRawFileList.forEach(qItem => {
-                    qItem.pairedSolution = null;
-                    const qBase = qItem.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-
-                    const matchedSol = parsedZipSolutions.find(sol => {
-                        const solBase = sol.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                        return (solBase.includes(qBase) || (sol.courseCode && sol.courseCode === qItem.courseCode && sol.examType === qItem.examType && sol.semester === qItem.semester));
-                    });
-
-                    if (matchedSol) {
-                        qItem.pairedSolution = matchedSol;
-                    }
+        // Serialize selections so dropping another batch during ZIP extraction preserves the queue.
+        let pendingQuestionSelection = Promise.resolve();
+        function handleZipFileSelection(inputFiles) {
+            const files = inputFiles?.name ? [inputFiles] : Array.from(inputFiles || []);
+            pendingQuestionSelection = pendingQuestionSelection.then(() => processQuestionFiles(files))
+                .catch(err => {
+                    console.error('Error reading question files:', err);
+                    showToast('Error reading question files: ' + err.message, 'error');
                 });
+            return pendingQuestionSelection;
+        }
 
-                // Also check if any existing questions in queue can now be paired with newly added solutions
-                if (parsedZipEntries.length > 0 && newSolutionList.length > 0) {
-                    parsedZipEntries.forEach(qItem => {
-                        if (qItem.pairedSolution) return;
-                        const qBase = qItem.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const matchedSol = newSolutionList.find(sol => {
-                            const solBase = sol.originalFilename.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                            return (solBase.includes(qBase) || (sol.courseCode && sol.courseCode === qItem.courseCode && sol.examType === qItem.examType && sol.semester === qItem.semester));
-                        });
-                        if (matchedSol) {
-                            qItem.pairedSolution = matchedSol;
-                        }
-                    });
-                }
-
-                // Duplicate Checking against allSubmissions in DB
-                const startIndex = parsedZipEntries.length;
-                newRawFileList.forEach((qItem, idx) => {
-                    qItem.id = `zip_item_${startIndex + idx}_${Date.now()}`;
-                    qItem.selected = true;
-                    qItem.isUploaded = false;
-
-                    const isDup = isQueuedFileAlreadyUploaded(qItem);
-                    qItem.isDuplicate = isDup;
-                    if (isDup) {
-                        qItem.selected = false;
+        async function processQuestionFiles(files) {
+            const supported = files.filter(file => /\.(pdf|zip)$/i.test(file.name));
+            if (supported.length !== files.length) showToast('Only PDF and ZIP files are supported in batch upload.', 'warning');
+            if (!supported.length) return;
+            const incoming = [];
+            for (const file of supported) {
+                if (/\.pdf$/i.test(file.name)) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        showToast(`${escapeUploadHtml(file.name)} exceeds the 5MB per-file limit and was skipped.`, 'error');
+                        continue;
                     }
-                });
-
-                // Append new questions to existing queue
-                parsedZipEntries.push(...newRawFileList);
-
-                // Update UI counters
-                document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
-                document.getElementById('zip-stat-solutions').textContent = parsedZipEntries.filter(i => i.pairedSolution).length;
-                refreshZipUploadedStatus({ render: true });
-                updateZipSelectedCount();
-
-                zipDropSection.style.display = 'none';
-                zipReviewSection.style.display = 'flex';
-                showToast(`Loaded ${newRawFileList.length} questions from ${zipFiles.length} ZIP file(s)! Total in queue: ${parsedZipEntries.length}`, 'success');
-
-            } catch (err) {
-                console.error('Error parsing ZIP file(s):', err);
-                showToast('Error reading ZIP file(s): ' + err.message, 'error');
+                    incoming.push({ ...parseQuestionMetadata(file.name, file.name), nativeFile: file });
+                    continue;
+                }
+                if (typeof JSZip === 'undefined') {
+                    showToast('ZIP support is still loading. Please add the archive again in a moment.', 'warning');
+                    continue;
+                }
+                try {
+                    const zip = await new JSZip().loadAsync(file);
+                    for (const [path, zipEntry] of Object.entries(zip.files)) {
+                        if (zipEntry.dir || /__MACOSX|\.DS_Store|Thumbs\.db/.test(path) || !/\.(pdf|png|jpe?g)$/i.test(path)) continue;
+                        const name = path.split('/').pop();
+                        incoming.push({ ...parseQuestionMetadata(path, name), zipEntry, sourceZipName: file.name });
+                    }
+                } catch (err) {
+                    showToast(`Could not read ${escapeUploadHtml(file.name)}: ${escapeUploadHtml(err.message)}`, 'error');
+                }
             }
+            if (!incoming.length) return;
+
+            const queuedKeys = new Set([...parsedZipEntries, ...parsedZipSolutions].map(item => item.filePath.toLowerCase()));
+            const unique = incoming.filter(item => {
+                const key = item.filePath.toLowerCase();
+                if (queuedKeys.has(key)) return false;
+                queuedKeys.add(key);
+                return true;
+            });
+            const questions = unique.filter(item => !item.isSolution);
+            const solutions = unique.filter(item => item.isSolution);
+            const candidates = [...parsedZipEntries, ...questions];
+            for (const solution of solutions) {
+                const question = candidates.find(item => !item.isUploaded && !item.pairedSolution && matchesQuestionSolution(item, solution));
+                if (question) question.pairedSolution = solution;
+                else questions.push(solution); // Standalone solutions retain their Solution material type.
+            }
+            parsedZipSolutions.push(...solutions);
+            for (const item of questions) {
+                item.id = `question_item_${Date.now()}_${parsedZipEntries.length}`;
+                item.isUploaded = false;
+                item.isDuplicate = isQueuedFileAlreadyUploaded(item);
+                item.selected = !item.isDuplicate;
+                parsedZipEntries.push(item);
+            }
+            document.getElementById('zip-stat-total').textContent = parsedZipEntries.length;
+            document.getElementById('zip-stat-solutions').textContent = parsedZipEntries.filter(item => item.pairedSolution).length;
+            refreshZipUploadedStatus({ render: true });
+            updateZipSelectedCount();
+            zipDropSection.style.display = 'none';
+            zipReviewSection.style.display = 'flex';
+            showToast(`Added ${questions.length} entries and paired ${solutions.length - questions.filter(item => item.isSolution).length} solutions. Review detected details before publishing.`, 'success');
         }
 
         function renderZipParsedTable() {
@@ -6505,7 +6325,7 @@
             zipTableTbody.innerHTML = '';
 
             if (parsedZipEntries.length === 0) {
-                zipTableTbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:2.5rem;"><i class="fas fa-check-circle" style="color:var(--success); font-size:1.5rem; display:block; margin-bottom:0.5rem;"></i> No questions in queue.</td></tr>';
+                zipTableTbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--text-muted); padding:2.5rem;"><i class="fas fa-check-circle" style="color:var(--success); font-size:1.5rem; display:block; margin-bottom:0.5rem;"></i> No questions in queue.</td></tr>';
                 updateZipSelectedCount();
                 return;
             }
@@ -6519,15 +6339,23 @@
                 tr.dataset.index = index;
 
                 // Course Code options
-                const courseOpts = CURRICULUM.map(c => `
+                let courseOpts = CURRICULUM.map(c => `
                     <option value="${c.code}" ${c.code === item.courseCode ? 'selected' : ''}>${c.code} - ${c.title}</option>
                 `).join('');
+                if (item.courseCode && !CURRICULUM.some(c => c.code === item.courseCode)) {
+                    courseOpts += `<option value="${escapeUploadHtml(item.courseCode)}" selected>${escapeUploadHtml(item.courseCode)} - ${escapeUploadHtml(item.courseName)}</option>`;
+                }
                 const hasCourse = Boolean(item.courseCode);
 
                 // Semester options
-                const semOpts = ADMIN_SEMESTERS.map(s => `
+                let semOpts = ADMIN_SEMESTERS.map(s => `
                     <option value="${s.code}" ${s.code === item.semester ? 'selected' : ''}>${s.label}</option>
                 `).join('');
+                if (item.semester && !ADMIN_SEMESTERS.some(s => s.code === item.semester)) {
+                    semOpts += `<option value="${escapeUploadHtml(item.semester)}" selected>${escapeUploadHtml(decodeSemester(item.semester))}</option>`;
+                }
+                const trimesterOpts = Array.from({ length: 13 }, (_, t) => `<option value="${t}" ${item.trimester !== '' && Number(item.trimester) === t ? 'selected' : ''}>${t === 0 ? 'Elective (0)' : `Trimester ${t}`}</option>`).join('');
+                const facultyOpts = facultiesList.map(f => `<option value="${escapeUploadHtml(f.id)}" ${String(item.facultyId) === String(f.id) ? 'selected' : ''}>${escapeUploadHtml(f.name)} (${escapeUploadHtml(f.code)})</option>`).join('');
 
                 // Exam options
                 const examOpts = ['Midterm', 'Final', 'Quiz 1', 'Quiz 2', 'Quiz 3', 'Quiz 4', 'Quiz', 'Assignment', 'Lab', "Faculty's Notes", "University's Notes"].map(e => `
@@ -6545,13 +6373,15 @@
                     statusBadge = `<span class="badge badge-approved" style="font-size:0.7rem; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid #10b981;"><i class="fas fa-check-double"></i> Published</span>`;
                 } else if (!hasCourse) {
                     statusBadge = `<span class="badge badge-rejected" style="font-size:0.7rem;"><i class="fas fa-exclamation-circle"></i> Select Course</span>`;
+                } else if (missingQuestionDetails(item).length || (isLabCourse(CURRICULUM.find(c => c.code === item.courseCode)) && !item.facultyId)) {
+                    statusBadge = `<span class="badge badge-pending" style="font-size:0.7rem;">Complete Details</span>`;
                 } else if (item.isDuplicate) {
                     statusBadge = `<span class="badge badge-pending" style="font-size:0.7rem;" title="A verified question for this course/exam/sem already exists"><i class="fas fa-exclamation-triangle"></i> Exists in DB</span>`;
                 }
 
                 // Solution Status
                 const solBadge = item.pairedSolution 
-                    ? `<span style="color:var(--success); font-weight:600; font-size:0.75rem;" title="${item.pairedSolution.originalFilename}"><i class="fas fa-check-circle"></i> Paired</span>` 
+                    ? `<span style="color:var(--success); font-weight:600; font-size:0.75rem;" title="${escapeUploadHtml(item.pairedSolution.originalFilename)}"><i class="fas fa-check-circle"></i> Paired</span>`
                     : `<span style="color:var(--text-muted); font-size:0.75rem;">None</span>`;
 
                 tr.innerHTML = `
@@ -6559,10 +6389,10 @@
                         <input type="checkbox" class="zip-item-checkbox" data-index="${index}" ${item.selected ? 'checked' : ''} ${item.isUploaded ? 'disabled' : ''}>
                     </td>
                     <td style="max-width:200px;">
-                        <div style="font-weight:600; font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main);" title="${item.filePath}">
-                            <i class="fas fa-file-pdf" style="color:var(--danger); margin-right:0.3rem;"></i> ${item.originalFilename}
+                        <div style="font-weight:600; font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main);" title="${escapeUploadHtml(item.filePath)}">
+                            <i class="fas fa-file-pdf" style="color:var(--danger); margin-right:0.3rem;"></i> ${escapeUploadHtml(item.originalFilename)}
                         </div>
-                        <div style="font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.sourceZipName ? `<span style="color:var(--warning); font-weight:600;">[${item.sourceZipName}]</span> ` : ''}${item.filePath}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.sourceZipName ? `<span style="color:var(--warning); font-weight:600;">[${escapeUploadHtml(item.sourceZipName)}]</span> ` : ''}${escapeUploadHtml(item.filePath)}</div>
                     </td>
                     <td>
                         <select class="zip-row-course" data-index="${index}">
@@ -6572,21 +6402,25 @@
                     </td>
                     <td>
                         <select class="zip-row-exam" data-index="${index}">
+                            <option value="">-- Select Exam --</option>
                             ${examOpts}
                         </select>
                     </td>
                     <td>
                         <select class="zip-row-sem" data-index="${index}">
+                            <option value="">-- Select Semester --</option>
                             ${semOpts}
                         </select>
                     </td>
+                    <td><select class="zip-row-trimester" data-index="${index}"><option value="">-- Select Trimester --</option>${trimesterOpts}</select></td>
+                    <td><select class="zip-row-faculty" data-index="${index}"><option value="">-- Select Faculty --</option>${facultyOpts}</select></td>
                     <td>
                         <select class="zip-row-type" data-index="${index}">
                             ${typeOpts}
                         </select>
                     </td>
                     <td>
-                        <input type="text" class="zip-row-topic" data-index="${index}" value="${item.topic || ''}" placeholder="Topic / Title">
+                        <input type="text" class="zip-row-topic" data-index="${index}" value="${escapeUploadHtml(item.topic)}" placeholder="Topic / Title">
                     </td>
                     <td style="text-align:center;">${solBadge}</td>
                     <td>${statusBadge}</td>
@@ -6601,7 +6435,7 @@
             });
 
             if (visibleCount === 0 && parsedZipEntries.length > 0) {
-                zipTableTbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:2rem;">No questions match filter criteria.</td></tr>';
+                zipTableTbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--text-muted); padding:2rem;">No questions match filter criteria.</td></tr>';
             }
 
             attachZipRowListeners();
@@ -6609,6 +6443,20 @@
         }
 
         function attachZipRowListeners() {
+            document.querySelectorAll('.zip-row-trimester, .zip-row-faculty').forEach(select => {
+                select.addEventListener('change', event => {
+                    const item = parsedZipEntries[Number(event.target.dataset.index)];
+                    if (event.target.classList.contains('zip-row-trimester')) {
+                        item.trimester = event.target.value === '' ? '' : Number(event.target.value);
+                    } else {
+                        const faculty = facultiesList.find(f => String(f.id) === event.target.value);
+                        item.facultyId = faculty?.id ?? null;
+                        item.facultyName = faculty?.name || '';
+                        item.facultyCode = faculty?.code || '';
+                    }
+                    renderZipParsedTable();
+                });
+            });
             // Checkboxes
             document.querySelectorAll('.zip-item-checkbox').forEach(cb => {
                 cb.addEventListener('change', (e) => {
@@ -6628,8 +6476,8 @@
                         parsedZipEntries[idx].courseCode = e.target.value;
                         parsedZipEntries[idx].courseName = getCourseTitle(e.target.value);
                         const cObj = CURRICULUM.find(c => c.code === e.target.value);
-                        if (cObj && cObj.trimester) parsedZipEntries[idx].trimester = cObj.trimester;
-                        renderZipParsedTable();
+                        if (cObj) parsedZipEntries[idx].trimester = cObj.trimester;
+                        refreshZipUploadedStatus();
                     }
                 });
             });
@@ -6666,7 +6514,7 @@
                     const idx = parseInt(e.target.dataset.index, 10);
                     if (parsedZipEntries[idx]) {
                         parsedZipEntries[idx].semester = e.target.value;
-                        parsedZipEntries[idx].topic = `${parsedZipEntries[idx].examType} Question ${decodeSemester(e.target.value)}`.trim();
+                        parsedZipEntries[idx].topic = `${parsedZipEntries[idx].examType} ${parsedZipEntries[idx].materialType} ${decodeSemester(e.target.value)}`.trim();
                         renderZipParsedTable();
                     }
                 });
@@ -6782,7 +6630,7 @@
                 parsedZipEntries.forEach(item => {
                     item.courseCode = targetCourse;
                     item.courseName = title;
-                    if (trimester) item.trimester = trimester;
+                    if (cObj) item.trimester = trimester;
                 });
                 refreshZipUploadedStatus({ render: true });
                 showToast(`Applied course ${targetCourse} to all questions.`, 'success');
@@ -6823,6 +6671,8 @@
         // Batch Upload Execution
         if (btnStartZipUpload) {
             btnStartZipUpload.addEventListener('click', async () => {
+                await pendingQuestionSelection;
+                if (isUploadingZip) return;
                 const selectedItems = parsedZipEntries.filter(i => i.selected && !i.isUploaded);
 
                 if (selectedItems.length === 0) {
@@ -6830,10 +6680,15 @@
                     return;
                 }
 
-                // Check for items with missing course code
-                const invalidCourse = selectedItems.find(i => !i.courseCode);
-                if (invalidCourse) {
-                    showToast(`Please select a course for: ${invalidCourse.originalFilename}`, 'error');
+                const incomplete = selectedItems.find(item => missingQuestionDetails(item).length);
+                if (incomplete) {
+                    const labels = { courseCode: 'course', examType: 'exam', semester: 'semester', trimester: 'trimester' };
+                    showToast(`Please select ${missingQuestionDetails(incomplete).map(key => labels[key]).join(', ')} for: ${escapeUploadHtml(incomplete.originalFilename)}`, 'error');
+                    return;
+                }
+                const missingFaculty = selectedItems.find(item => isLabCourse(item.courseCode) && !item.facultyId);
+                if (missingFaculty) {
+                    showToast(`Please select a faculty member for lab course: ${escapeUploadHtml(missingFaculty.originalFilename)}`, 'error');
                     return;
                 }
 
@@ -6851,7 +6706,7 @@
                 let failureCount = 0;
 
                 const logStatus = (msg) => {
-                    zipConsoleLog.innerHTML += `<div style="color:#f59e0b;">⏳ ${msg}</div>`;
+                    zipConsoleLog.innerHTML += `<div style="color:#f59e0b;">⏳ ${escapeUploadHtml(msg)}</div>`;
                     zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
                 };
 
@@ -6874,23 +6729,21 @@
                         }
 
                         try {
-                            // 1. Extract Main File as Blob from JSZip
-                            const mainBlob = await item.zipEntry.async('blob');
-                            const mainFile = new File([mainBlob], item.originalFilename, { type: 'application/pdf' });
+                            // 1. Read a directly selected PDF or an archive entry.
+                            const mainFile = await getQueuedUploadFile(item);
 
-                            zipConsoleLog.innerHTML += `<div>[${i + 1}/${selectedItems.length}] Uploading Cloudinary asset for ${item.courseCode} (${item.originalFilename})...</div>`;
+                            zipConsoleLog.innerHTML += `<div>[${i + 1}/${selectedItems.length}] Uploading Cloudinary asset for ${escapeUploadHtml(item.courseCode)} (${escapeUploadHtml(item.originalFilename)})...</div>`;
                             zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
 
-                            const mainAsset = await uploadToCloudinary(item.materialType === 'Notes' ? 'note' : 'question', mainFile, item.courseCode, item.topic, null, logStatus);
+                            const mainAsset = await uploadToCloudinary(item.materialType === 'Notes' ? 'note' : item.materialType === 'Solution' ? 'solution' : 'question', mainFile, item.courseCode, item.topic, null, logStatus);
                             const materialAssets = [mainAsset];
 
                             // 2. Upload Paired Solution if present
                             let solPdfUrl = null;
-                            if (item.pairedSolution && item.pairedSolution.zipEntry) {
+                            if (item.pairedSolution) {
                                 await BackgroundUploadManager.delay(1000);
-                                zipConsoleLog.innerHTML += `<div style="color:#38bdf8;">→ Uploading paired solution (${item.pairedSolution.originalFilename})...</div>`;
-                                const solBlob = await item.pairedSolution.zipEntry.async('blob');
-                                const solFile = new File([solBlob], item.pairedSolution.originalFilename, { type: 'application/pdf' });
+                                zipConsoleLog.innerHTML += `<div style="color:#38bdf8;">→ Uploading paired solution (${escapeUploadHtml(item.pairedSolution.originalFilename)})...</div>`;
+                                const solFile = await getQueuedUploadFile(item.pairedSolution);
                                 const solAsset = await uploadToCloudinary('solution', solFile, item.courseCode, item.topic, null, logStatus);
                                 materialAssets.push(solAsset);
                                 solPdfUrl = solAsset.pdfUrl;
@@ -6913,7 +6766,9 @@
                             courseCode: item.courseCode.replace(/\s+/g, ' ').toUpperCase(),
                             courseName: itemCourseName,
                             semester: item.semester,
-                            trimester: item.trimester || 1,
+                            trimester: item.trimester,
+                            originalFilename: item.originalFilename,
+                            fileSize: mainFile.size,
                             type: item.materialType || 'Question',
                             materialType: item.materialType || 'Question',
                             examType: item.examType || 'Midterm',
@@ -6930,8 +6785,8 @@
                             solutionPdfUrl: solPdfUrl,
                             status: 'approved',
                             approvedAt: serverTimestamp(),
-                            approvedBy: 'Admin (Bulk ZIP)',
-                            submitterName: 'Admin (Bulk ZIP)',
+                            approvedBy: 'Admin (Batch Upload)',
+                            submitterName: 'Admin (Batch Upload)',
                             submitterEmail: currentUser?.email || 'hamimasir5@gmail.com',
                             courseSearch: `${item.courseCode} ${itemCourseName} ${itemTopic}`.toLowerCase(),
                             materialGroup: item.materialType === 'Notes' ? 'notes' : 'questions',
@@ -6951,7 +6806,7 @@
                     } catch (uploadErr) {
                         failureCount++;
                         console.error(`Failed uploading ${item.originalFilename}:`, uploadErr);
-                        zipConsoleLog.innerHTML += `<div style="color:#ef4444;">✖ Error on ${item.originalFilename}: ${uploadErr.message}</div>`;
+                        zipConsoleLog.innerHTML += `<div style="color:#ef4444;">✖ Error on ${escapeUploadHtml(item.originalFilename)}: ${escapeUploadHtml(uploadErr.message)}</div>`;
                         zipConsoleLog.scrollTop = zipConsoleLog.scrollHeight;
                     }
                 }
